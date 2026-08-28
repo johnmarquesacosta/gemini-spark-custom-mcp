@@ -16,12 +16,14 @@ services:
       - JWT_SECRET=$SERVICE_PASSWORD_JWT
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
       - REFRESH_TOKEN_EXPIRES_IN=${REFRESH_TOKEN_EXPIRES_IN:-7d}
-      # App e URLs hardcoded
-      - FRONTEND_URL=https://mcp-web.johnmarques.com.br
-      - RESEND_API_KEY=$RESEND_API_KEY
+      # App e URLs
+      - FRONTEND_URL=${FRONTEND_URL:-$SERVICE_URL_WEB}
+      - RESEND_API_KEY=${RESEND_API_KEY}
       # Gemini OAuth Auto-Sync
-      - API_PUBLIC_URL=https://mcp-api.johnmarques.com.br
-      - GEMINI_ACCOUNT_LINK_ID=100027770923717185730
+      - API_PUBLIC_URL=${API_PUBLIC_URL:-$SERVICE_URL_API}
+      - GEMINI_ACCOUNT_LINK_ID=${GEMINI_ACCOUNT_LINK_ID}
+      - GEMINI_CLIENT_ID=${GEMINI_CLIENT_ID}
+      - TUNNEL_HOST=${TUNNEL_HOST:-$SERVICE_URL_API}
     depends_on:
       postgresql:
         condition: service_healthy
@@ -39,7 +41,7 @@ services:
       # Exposição de porta padrão do Coolify V4
       - SERVICE_URL_WEB_3000
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://mcp-api.johnmarques.com.br
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-$SERVICE_URL_API}
     depends_on:
       api:
         condition: service_healthy
