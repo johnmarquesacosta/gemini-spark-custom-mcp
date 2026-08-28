@@ -15,9 +15,9 @@ services:
       # Auth
       - JWT_SECRET=$SERVICE_PASSWORD_JWT
       # App e URLs
-      - FRONTEND_URL=${FRONTEND_URL:-$SERVICE_URL_WEB}
+      - FRONTEND_URL=${FRONTEND_URL:-${SERVICE_URL_WEB_3000}}
       # Gemini OAuth Auto-Sync
-      - API_PUBLIC_URL=${API_PUBLIC_URL:-$SERVICE_URL_API}
+      - API_PUBLIC_URL=${API_PUBLIC_URL:-${SERVICE_URL_API_3001}}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
@@ -39,8 +39,8 @@ services:
       # Exposição de porta padrão do Coolify V4
       - SERVICE_URL_WEB_3000
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-$SERVICE_URL_API}
-      - RUNTIME_API_URL=${NEXT_PUBLIC_API_URL:-$SERVICE_URL_API}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${SERVICE_URL_API_3001}}
+      - RUNTIME_API_URL=${NEXT_PUBLIC_API_URL:-${SERVICE_URL_API_3001}}
     depends_on:
       api:
         condition: service_healthy
