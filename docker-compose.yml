@@ -1,0 +1,71 @@
+services:
+  api:
+    image: 'johnmarquesacosta/mcp-api:latest'
+    environment:
+      # Exposição de porta padrão do Coolify V4
+      - SERVICE_URL_API_3001
+      - PORT=3001
+      - NODE_ENV=production
+      # Banco de dados
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-nestjs_mcp}
+      - DB_USER=$SERVICE_USER_POSTGRES
+      - DB_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      # Auth
+      - JWT_SECRET=$SERVICE_PASSWORD_JWT
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
+      - REFRESH_TOKEN_EXPIRES_IN=${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      # App e URLs hardcoded
+      - FRONTEND_URL=https://mcp-web.johnmarques.com.br
+      - RESEND_API_KEY=$RESEND_API_KEY
+      # Gemini OAuth Auto-Sync
+      - API_PUBLIC_URL=https://mcp-api.johnmarques.com.br
+      - GEMINI_ACCOUNT_LINK_ID=100027770923717185730
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget -qO- http://127.0.0.1:3001/health || exit 1'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  web:
+    image: 'johnmarquesacosta/mcp-web:latest'
+    environment:
+      # Exposição de porta padrão do Coolify V4
+      - SERVICE_URL_WEB_3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://mcp-api.johnmarques.com.br
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget -qO- http://127.0.0.1:3000/ || exit 1'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  postgresql:
+    image: 'postgres:16-alpine'
+    volumes:
+      - 'postgresql-data:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_USER=$SERVICE_USER_POSTGRES
+      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - POSTGRES_DB=${POSTGRES_DB:-nestjs_mcp}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+volumes:
+  postgresql-data:

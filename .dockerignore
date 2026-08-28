@@ -1,0 +1,32 @@
+# Dependências locais (reinstaladas no build)
+node_modules
+**/node_modules
+
+# Builds anteriores
+**/dist
+**/.next
+**/out
+
+# Arquivos de ambiente (são injetados via Coolify como variáveis de ambiente)
+**/.env
+**/.env.*
+
+# Cobertura de testes e cache
+**/coverage
+**/.turbo
+**/.cache
+
+# Git e IDE
+.git
+.gitignore
+.vscode
+.idea
+**/.DS_Store
+
+# Arquivos de agentes/config local
+.gemini
+.agents
+.claude
+
+# Logs
+**/*.log
