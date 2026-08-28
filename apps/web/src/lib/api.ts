@@ -1,19 +1,31 @@
 import axios from "axios";
 import { useAuthStore } from "../store/useAuthStore";
 
-export const getApiUrl = () => {
+export const fetchApiUrl = async () => {
   if (typeof window !== "undefined" && (window as any).ENV?.API_URL) {
-    return (window as any).ENV.API_URL;
+    let url = (window as any).ENV.API_URL;
+    if (!url.startsWith('http')) url = 'https://' + url;
+    return url;
   }
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  
+  try {
+    const res = await axios.get('/api/env');
+    const url = res.data.API_URL;
+    if (typeof window !== "undefined") {
+      (window as any).ENV = { API_URL: url };
+    }
+    return url;
+  } catch (e) {
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  }
 };
 
 const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  config.baseURL = getApiUrl();
+api.interceptors.request.use(async (config) => {
+  config.baseURL = await fetchApiUrl();
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
