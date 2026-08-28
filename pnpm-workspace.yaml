@@ -2,9 +2,10 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  '@parcel/watcher': set this to true or false
-  '@scarf/scarf': set this to true or false
-  unrs-resolver: set this to true or false
+  '@parcel/watcher': true
+  '@scarf/scarf': true
+  unrs-resolver: true
+  '@swc/core': true
 minimumReleaseAgeExclude:
   - '@jest/console@30.5.0'
   - '@jest/core@30.5.0'
