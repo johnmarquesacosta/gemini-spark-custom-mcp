@@ -12,22 +12,19 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { EnvProvider } from "@/components/env-provider";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const apiUrl = process.env.RUNTIME_API_URL || process.env.NEXT_PUBLIC_API_URL || '';
+  
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = { API_URL: "${process.env.RUNTIME_API_URL || process.env.NEXT_PUBLIC_API_URL || ''}" };`,
-          }}
-        />
-      </head>
       <body className="min-h-screen flex flex-col antialiased">
+        <EnvProvider apiUrl={apiUrl} />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

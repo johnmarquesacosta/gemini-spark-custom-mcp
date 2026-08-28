@@ -9,11 +9,11 @@ export const getApiUrl = () => {
 };
 
 const api = axios.create({
-  baseURL: getApiUrl(),
   withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiUrl();
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
