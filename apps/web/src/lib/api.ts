@@ -1,8 +1,15 @@
 import axios from "axios";
 import { useAuthStore } from "../store/useAuthStore";
 
+export const getApiUrl = () => {
+  if (typeof window !== "undefined" && (window as any).ENV?.API_URL) {
+    return (window as any).ENV.API_URL;
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+};
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+  baseURL: getApiUrl(),
   withCredentials: true,
 });
 

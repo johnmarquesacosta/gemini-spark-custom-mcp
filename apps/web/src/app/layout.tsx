@@ -18,6 +18,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = { API_URL: "${process.env.NEXT_PUBLIC_API_URL || ''}" };`,
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col antialiased">
         <ThemeProvider
           attribute="class"

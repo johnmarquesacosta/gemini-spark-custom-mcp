@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import api from "@/lib/api";
+import api, { getApiUrl } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -66,7 +66,7 @@ export default function LoginPage() {
     }
   };
   const handleGoogleLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/google`;
+    window.location.href = `${getApiUrl()}/auth/google`;
   };
 
   return (
