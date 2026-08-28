@@ -6,10 +6,11 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "format": "prettier --write ."
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@repo/config": "workspace:*"
+    "@repo/config": "workspace:*",
+    "typescript": "^6.0.0"
   }
 }

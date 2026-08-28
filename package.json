@@ -5,10 +5,12 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "format": "turbo run format"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "prettier": "^3.9.6",
+    "turbo": "^2.10.12"
   },
-  "packageManager": "pnpm@10.9.0"
+  "packageManager": "pnpm@11.24.0"
 }

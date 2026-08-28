@@ -8,7 +8,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Copy, Trash2, KeyRound } from "lucide-react";
 import { AiAgentDto } from "@repo/shared-types";
@@ -25,7 +32,12 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true);
   const [newKey, setNewKey] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateAgentForm>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateAgentForm>({
     resolver: zodResolver(createAgentSchema),
   });
 
@@ -48,7 +60,7 @@ export default function AgentsPage() {
   const onSubmit = async (data: CreateAgentForm) => {
     try {
       setNewKey(null);
-      const scopes = data.scopes.split(',').map(s => s.trim());
+      const scopes = data.scopes.split(",").map((s) => s.trim());
       const res = await api.post("/agents", { name: data.name, scopes });
       setNewKey(res.data.apiKey);
       setAgents([res.data.agent, ...agents]);
@@ -59,10 +71,11 @@ export default function AgentsPage() {
   };
 
   const handleRevoke = async (id: string) => {
-    if (!confirm("Are you sure you want to revoke this agent credential?")) return;
+    if (!confirm("Are you sure you want to revoke this agent credential?"))
+      return;
     try {
       await api.delete(`/agents/${id}`);
-      setAgents(agents.filter(a => a.id !== id));
+      setAgents(agents.filter((a) => a.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -79,25 +92,45 @@ export default function AgentsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">AI Agents (MCP)</h1>
-        <p className="text-muted-foreground mt-2">Manage credentials for your AI agents to access MCP routes</p>
+        <p className="text-muted-foreground mt-2">
+          Manage credentials for your AI agents to access MCP routes
+        </p>
       </div>
 
       <Card className="bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle>Create New Credential</CardTitle>
-          <CardDescription>Generate a new API key for an AI agent</CardDescription>
+          <CardDescription>
+            Generate a new API key for an AI agent
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Agent Name</Label>
-              <Input id="name" placeholder="e.g. claude-mcp-prod" {...register("name")} />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              <Input
+                id="name"
+                placeholder="e.g. claude-mcp-prod"
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="scopes">Scopes (comma separated)</Label>
-              <Input id="scopes" placeholder="e.g. read:files, write:files" {...register("scopes")} />
-              {errors.scopes && <p className="text-sm text-destructive">{errors.scopes.message}</p>}
+              <Input
+                id="scopes"
+                placeholder="e.g. read:files, write:files"
+                {...register("scopes")}
+              />
+              {errors.scopes && (
+                <p className="text-sm text-destructive">
+                  {errors.scopes.message}
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter>
@@ -113,10 +146,19 @@ export default function AgentsPage() {
           <KeyRound className="h-4 w-4" />
           <AlertTitle>API Key Generated Successfully!</AlertTitle>
           <AlertDescription className="mt-2">
-            <p className="mb-2 text-foreground">Please copy this key now. You will not be able to see it again.</p>
+            <p className="mb-2 text-foreground">
+              Please copy this key now. You will not be able to see it again.
+            </p>
             <div className="flex items-center space-x-2">
-              <code className="bg-muted p-2 rounded text-primary break-all">{newKey}</code>
-              <Button variant="outline" size="icon" onClick={copyToClipboard} className="shrink-0">
+              <code className="bg-muted p-2 rounded text-primary break-all">
+                {newKey}
+              </code>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={copyToClipboard}
+                className="shrink-0"
+              >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -130,32 +172,54 @@ export default function AgentsPage() {
           <p className="text-muted-foreground">Loading...</p>
         ) : agents.length === 0 ? (
           <Card className="bg-card/50 p-8 text-center border-dashed">
-            <p className="text-muted-foreground">No active AI agent credentials found.</p>
+            <p className="text-muted-foreground">
+              No active AI agent credentials found.
+            </p>
           </Card>
         ) : (
           <div className="grid gap-4">
             {agents.map((agent) => (
-              <Card key={agent.id} className="bg-card text-card-foreground shadow-sm">
+              <Card
+                key={agent.id}
+                className="bg-card text-card-foreground shadow-sm"
+              >
                 <CardHeader className="flex flex-row items-start justify-between pb-2">
                   <div>
                     <CardTitle className="text-lg">{agent.name}</CardTitle>
-                    <CardDescription className="font-mono text-xs mt-1">ID: {agent.id}</CardDescription>
+                    <CardDescription className="font-mono text-xs mt-1">
+                      ID: {agent.id}
+                    </CardDescription>
                   </div>
-                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleRevoke(agent.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleRevoke(agent.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {agent.scopes.map(scope => (
-                      <span key={scope} className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">
+                    {agent.scopes.map((scope) => (
+                      <span
+                        key={scope}
+                        className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs"
+                      >
                         {scope}
                       </span>
                     ))}
                   </div>
                   <div className="text-xs text-muted-foreground flex justify-between">
-                    <span>Created: {new Date(agent.createdAt).toLocaleDateString()}</span>
-                    <span>Last used: {agent.lastUsedAt ? new Date(agent.lastUsedAt).toLocaleDateString() : 'Never'}</span>
+                    <span>
+                      Created: {new Date(agent.createdAt).toLocaleDateString()}
+                    </span>
+                    <span>
+                      Last used:{" "}
+                      {agent.lastUsedAt
+                        ? new Date(agent.lastUsedAt).toLocaleDateString()
+                        : "Never"}
+                    </span>
                   </div>
                 </CardContent>
               </Card>

@@ -9,7 +9,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const forgotPasswordSchema = z.object({
@@ -21,7 +28,11 @@ type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotPasswordForm>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
   });
 
@@ -39,7 +50,9 @@ export default function ForgotPasswordPage() {
     <Card className="bg-card text-card-foreground shadow-sm backdrop-blur-xl">
       <CardHeader>
         <CardTitle>Reset your password</CardTitle>
-        <CardDescription>Enter your email and we&apos;ll send you a reset link</CardDescription>
+        <CardDescription>
+          Enter your email and we&apos;ll send you a reset link
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
@@ -50,8 +63,15 @@ export default function ForgotPasswordPage() {
           )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="john@example.com" {...register("email")} />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            <Input
+              id="email"
+              type="email"
+              placeholder="john@example.com"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email.message}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
@@ -59,7 +79,10 @@ export default function ForgotPasswordPage() {
             {isSubmitting ? "Sending..." : "Send reset link"}
           </Button>
           <div className="text-sm text-muted-foreground text-center">
-            Remember your password? <Link href="/login" className="text-primary hover:underline">Sign in</Link>
+            Remember your password?{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
           </div>
         </CardFooter>
       </form>

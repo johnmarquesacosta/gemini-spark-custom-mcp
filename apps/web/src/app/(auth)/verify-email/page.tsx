@@ -10,7 +10,14 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const resendSchema = z.object({
@@ -22,11 +29,17 @@ type ResendForm = z.infer<typeof resendSchema>;
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  
-  const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
+
+  const [status, setStatus] = useState<
+    "idle" | "verifying" | "success" | "error"
+  >("idle");
   const [message, setMessage] = useState<string | null>(null);
-  
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ResendForm>({
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ResendForm>({
     resolver: zodResolver(resendSchema),
   });
 
@@ -38,11 +51,16 @@ function VerifyEmailContent() {
       try {
         await api.post("/auth/verify-email", { token: verificationToken });
         setStatus("success");
-        setMessage("Your email has been successfully verified. You can now sign in.");
+        setMessage(
+          "Your email has been successfully verified. You can now sign in.",
+        );
       } catch (err) {
         const error = err as { response?: { data?: { message?: string } } };
         setStatus("error");
-        setMessage(error.response?.data?.message || "Verification failed. The link may be invalid or expired.");
+        setMessage(
+          error.response?.data?.message ||
+            "Verification failed. The link may be invalid or expired.",
+        );
       }
     };
 
@@ -58,11 +76,15 @@ function VerifyEmailContent() {
       setMessage(null);
       await api.post("/auth/resend-verification", data);
       setStatus("success");
-      setMessage("If the email is registered and unverified, a new link has been sent. Please check your inbox.");
+      setMessage(
+        "If the email is registered and unverified, a new link has been sent. Please check your inbox.",
+      );
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       setStatus("error");
-      setMessage(error.response?.data?.message || "Failed to resend verification email.");
+      setMessage(
+        error.response?.data?.message || "Failed to resend verification email.",
+      );
     }
   };
 
@@ -71,7 +93,9 @@ function VerifyEmailContent() {
       <Card className="bg-card text-card-foreground shadow-sm backdrop-blur-xl">
         <CardHeader>
           <CardTitle>Verifying Email...</CardTitle>
-          <CardDescription>Please wait while we verify your email address.</CardDescription>
+          <CardDescription>
+            Please wait while we verify your email address.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -82,30 +106,51 @@ function VerifyEmailContent() {
       <CardHeader>
         <CardTitle>Verify your email</CardTitle>
         <CardDescription>
-          {token && status === "error" 
+          {token && status === "error"
             ? "There was an issue verifying your email."
             : "Check your email for the verification link."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {message && (
-          <Alert variant={status === "success" ? "default" : "destructive"} 
-                 className={status === "success" ? "bg-green-900/20 border-green-900/50 text-green-400" : "bg-red-900/20 border-red-900/50 text-red-400"}>
+          <Alert
+            variant={status === "success" ? "default" : "destructive"}
+            className={
+              status === "success"
+                ? "bg-green-900/20 border-green-900/50 text-green-400"
+                : "bg-red-900/20 border-red-900/50 text-red-400"
+            }
+          >
             <AlertDescription>{message}</AlertDescription>
           </Alert>
         )}
-        
+
         {status === "success" && token ? (
-          <Link href="/login" className={buttonVariants({ className: "w-full" })}>Go to Login</Link>
+          <Link
+            href="/login"
+            className={buttonVariants({ className: "w-full" })}
+          >
+            Go to Login
+          </Link>
         ) : (
           <form onSubmit={handleSubmit(onResend)} className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Didn&apos;t receive the email? Enter your email address to resend the verification link.
+              Didn&apos;t receive the email? Enter your email address to resend
+              the verification link.
             </p>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="john@example.com" {...register("email")} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+              <Input
+                id="email"
+                type="email"
+                placeholder="john@example.com"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Sending..." : "Resend Verification Email"}
@@ -115,7 +160,10 @@ function VerifyEmailContent() {
       </CardContent>
       <CardFooter>
         <div className="text-sm text-muted-foreground text-center w-full">
-          Back to <Link href="/login" className="text-primary hover:underline">Sign in</Link>
+          Back to{" "}
+          <Link href="/login" className="text-primary hover:underline">
+            Sign in
+          </Link>
         </div>
       </CardFooter>
     </Card>

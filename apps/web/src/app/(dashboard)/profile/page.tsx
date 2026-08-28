@@ -9,17 +9,26 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string()
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
@@ -28,7 +37,12 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ChangePasswordForm>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ChangePasswordForm>({
     resolver: zodResolver(changePasswordSchema),
   });
 
@@ -38,7 +52,7 @@ export default function ProfilePage() {
       setSuccess(null);
       await api.post("/auth/change-password", {
         currentPassword: data.currentPassword,
-        newPassword: data.newPassword
+        newPassword: data.newPassword,
       });
       setSuccess("Password changed successfully.");
       reset();
@@ -52,7 +66,9 @@ export default function ProfilePage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="text-muted-foreground mt-2">Manage your account settings</p>
+        <p className="text-muted-foreground mt-2">
+          Manage your account settings
+        </p>
       </div>
 
       <Card className="bg-card text-card-foreground shadow-sm">
@@ -74,12 +90,17 @@ export default function ProfilePage() {
       <Card className="bg-card text-card-foreground shadow-sm">
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
-          <CardDescription>Update your password here. This will log you out of other devices.</CardDescription>
+          <CardDescription>
+            Update your password here. This will log you out of other devices.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive" className="bg-red-900/20 border-red-900/50 text-red-400">
+              <Alert
+                variant="destructive"
+                className="bg-red-900/20 border-red-900/50 text-red-400"
+              >
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -90,18 +111,42 @@ export default function ProfilePage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Current Password</Label>
-              <Input id="currentPassword" type="password" {...register("currentPassword")} />
-              {errors.currentPassword && <p className="text-sm text-destructive">{errors.currentPassword.message}</p>}
+              <Input
+                id="currentPassword"
+                type="password"
+                {...register("currentPassword")}
+              />
+              {errors.currentPassword && (
+                <p className="text-sm text-destructive">
+                  {errors.currentPassword.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
-              <Input id="newPassword" type="password" {...register("newPassword")} />
-              {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword.message}</p>}
+              <Input
+                id="newPassword"
+                type="password"
+                {...register("newPassword")}
+              />
+              {errors.newPassword && (
+                <p className="text-sm text-destructive">
+                  {errors.newPassword.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
-              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+              <Input
+                id="confirmPassword"
+                type="password"
+                {...register("confirmPassword")}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter>
