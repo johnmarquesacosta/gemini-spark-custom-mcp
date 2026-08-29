@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { approveAuthorization } from "../../actions/oauth";
+import { navigateTo } from "../../../utils/navigation";
 
 export function ConsentClient({
   client_id,
@@ -32,7 +33,7 @@ export function ConsentClient({
         finalUrl.searchParams.set("state", state);
       }
       
-      window.location.href = finalUrl.toString();
+      navigateTo(finalUrl.toString());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
@@ -45,7 +46,7 @@ export function ConsentClient({
     if (state) {
       url.searchParams.set("state", state);
     }
-    window.location.href = url.toString();
+    navigateTo(url.toString());
   };
 
   return (

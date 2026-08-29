@@ -1,10 +1,15 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ConsentClient } from './client';
 import * as actions from '../../actions/oauth';
+import { navigateTo } from '../../../utils/navigation';
 
-// Mock the server actions
+// Mock the server actions and navigation
 jest.mock('../../actions/oauth', () => ({
   approveAuthorization: jest.fn(),
+}));
+
+jest.mock('../../../utils/navigation', () => ({
+  navigateTo: jest.fn(),
 }));
 
 describe('ConsentClient', () => {
@@ -15,30 +20,8 @@ describe('ConsentClient', () => {
     code_challenge: 'challenge123',
   };
 
-  const originalLocation = window.location;
-
-  beforeAll(() => {
-    // @ts-expect-error - overriding window.location for tests
-    delete window.location;
-    Object.defineProperty(window, 'location', {
-      value: { ...originalLocation, href: '' },
-      writable: true,
-    });
-  });
-
-  afterAll(() => {
-    Object.defineProperty(window, 'location', {
-      value: originalLocation,
-      writable: true,
-    });
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
-    Object.defineProperty(window, 'location', {
-      value: { ...originalLocation, href: '' },
-      writable: true,
-    });
   });
 
   it('renders correctly', () => {
@@ -53,7 +36,7 @@ describe('ConsentClient', () => {
 
     fireEvent.click(screen.getByText('Cancel'));
 
-    expect(window.location.href).toBe('http://localhost:3000/callback?error=access_denied&state=abc');
+    expect(navigateTo).toHaveBeenCalledWith('http://localhost:3000/callback?error=access_denied&state=abc');
   });
 
   it('handles deny action correctly without state', () => {
@@ -61,7 +44,7 @@ describe('ConsentClient', () => {
 
     fireEvent.click(screen.getByText('Cancel'));
 
-    expect(window.location.href).toBe('http://localhost:3000/callback?error=access_denied');
+    expect(navigateTo).toHaveBeenCalledWith('http://localhost:3000/callback?error=access_denied');
   });
 
   it('handles approve action successfully', async () => {
@@ -82,7 +65,7 @@ describe('ConsentClient', () => {
         redirect_uri: 'http://localhost:3000/callback',
         code_challenge: 'challenge123',
       });
-      expect(window.location.href).toBe('http://localhost:3000/callback?code=auth-code&state=abc');
+      expect(navigateTo).toHaveBeenCalledWith('http://localhost:3000/callback?code=auth-code&state=abc');
     });
   });
 
