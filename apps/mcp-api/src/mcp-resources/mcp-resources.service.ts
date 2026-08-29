@@ -4,16 +4,35 @@ import { Repository } from 'typeorm';
 import { McpTool } from './entities/mcp-tool.entity';
 import { McpPrompt } from './entities/mcp-prompt.entity';
 
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+
 export class CreateToolDto {
+  @IsString()
+  @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
   description: string;
+
+  @IsOptional()
   inputSchema?: any;
 }
 
 export class CreatePromptDto {
+  @IsString()
+  @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
   description: string;
+
+  @IsString()
+  @IsNotEmpty()
   content: string;
+
+  @IsOptional()
   arguments?: any;
 }
 
