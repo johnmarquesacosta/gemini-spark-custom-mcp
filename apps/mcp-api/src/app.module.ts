@@ -19,9 +19,13 @@ import { UsersModule } from './users/users.module';
         port: configService.get<number>('DB_PORT'),
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME') || configService.get<string>('POSTGRES_DB'),
+        database:
+          configService.get<string>('DB_NAME') ||
+          configService.get<string>('POSTGRES_DB'),
         autoLoadEntities: true,
-        synchronize: configService.get<string>('NODE_ENV') !== 'production' || configService.get<string>('TYPEORM_SYNC') === 'true', // Use carefully in production
+        synchronize:
+          configService.get<string>('NODE_ENV') !== 'production' ||
+          configService.get<string>('TYPEORM_SYNC') === 'true', // Use carefully in production
       }),
       inject: [ConfigService],
     }),

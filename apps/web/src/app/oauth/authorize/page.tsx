@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { auth } from "@/auth";
 import { ConsentClient } from "./client";
 
@@ -49,9 +50,11 @@ export default async function OAuthAuthorizePage({
           </p>
           <div className="flex items-center gap-3">
             {session.user.image && (
-              <img
+              <Image
                 src={session.user.image}
                 alt={session.user.name || "User"}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full"
               />
             )}

@@ -140,14 +140,20 @@ describe('UsersService', () => {
         email: 'test@example.com',
         name: 'Test Name',
       };
-      jest.spyOn(service, 'validateOAuthUser').mockResolvedValue(existingUser as any);
+      jest
+        .spyOn(service, 'validateOAuthUser')
+        .mockResolvedValue(existingUser as any);
 
       const result = await service.syncUser({
         email: 'test@example.com',
         name: 'Test Name',
       });
 
-      expect(service.validateOAuthUser).toHaveBeenCalledWith('test@example.com', 'Test Name', undefined);
+      expect(service.validateOAuthUser).toHaveBeenCalledWith(
+        'test@example.com',
+        'Test Name',
+        undefined,
+      );
       expect(result).toEqual({
         success: true,
         user: { id: '123', email: 'test@example.com' },

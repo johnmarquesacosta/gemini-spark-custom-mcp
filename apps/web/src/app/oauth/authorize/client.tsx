@@ -33,8 +33,8 @@ export function ConsentClient({
       }
       
       window.location.href = finalUrl.toString();
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
   };

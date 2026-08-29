@@ -5,12 +5,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { McpAuthService } from './mcp-auth.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class McpAuthGuard implements CanActivate {
-  constructor(private readonly auth: McpAuthService) {}
+  constructor(
+    private readonly auth: McpAuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const authHeader = req.headers['authorization'];
     const token = authHeader?.replace('Bearer ', '');
@@ -25,7 +29,18 @@ export class McpAuthGuard implements CanActivate {
     }
 
     try {
-      req.user = this.auth.verifyToken(token);
+      const payload = this.auth.verifyToken(token);
+      if (typeof payload === 'string' || !payload?.sub) {
+        throw new UnauthorizedException();
+      }
+
+      const user = await this.usersService.findByEmail(payload.sub as string);
+      if (!user) throw new UnauthorizedException();
+
+      req.user = {
+        ...payload,
+        sub: user.id, // Substitui o email pelo UUID correto
+      };
       return true;
     } catch {
       throw new UnauthorizedException();

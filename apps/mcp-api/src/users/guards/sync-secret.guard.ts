@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -11,11 +17,14 @@ export class SyncSecretGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const syncSecret = request.headers['x-sync-secret'];
 
-    const expectedSecret = this.configService.get<string>('AUTH_SECRET') 
-      || this.configService.get<string>('JWT_SECRET');
+    const expectedSecret =
+      this.configService.get<string>('AUTH_SECRET') ||
+      this.configService.get<string>('JWT_SECRET');
 
     if (!syncSecret || syncSecret !== expectedSecret) {
-      this.logger.warn(`Invalid sync attempt from IP ${request.ip}. Secret mismatch.`);
+      this.logger.warn(
+        `Invalid sync attempt from IP ${request.ip}. Secret mismatch.`,
+      );
       throw new UnauthorizedException('Invalid sync secret');
     }
 

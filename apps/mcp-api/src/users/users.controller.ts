@@ -1,4 +1,11 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { SyncSecretGuard } from './guards/sync-secret.guard';
@@ -14,7 +21,8 @@ export class UsersController {
   @UseGuards(SyncSecretGuard)
   @ApiOperation({
     summary: 'Sync User from Frontend',
-    description: 'Receives user data from NextAuth and creates/updates the user in the database.',
+    description:
+      'Receives user data from NextAuth and creates/updates the user in the database.',
   })
   @ApiHeader({
     name: 'x-sync-secret',

@@ -43,7 +43,10 @@ export class McpResourcesService {
     return this.promptRepository.find({ where: { userId } });
   }
 
-  async createPrompt(userId: string, data: CreatePromptDto): Promise<McpPrompt> {
+  async createPrompt(
+    userId: string,
+    data: CreatePromptDto,
+  ): Promise<McpPrompt> {
     const prompt = this.promptRepository.create({ ...data, userId });
     return this.promptRepository.save(prompt);
   }
@@ -66,14 +69,16 @@ export class McpResourcesService {
           },
         };
         break;
-      case 'tools/list':
+      case 'tools/list': {
         const tools = await this.listTools(userId);
         result = { tools };
         break;
-      case 'prompts/list':
+      }
+      case 'prompts/list': {
         const prompts = await this.listPrompts(userId);
         result = { prompts };
         break;
+      }
       case 'resources/list':
         result = { resources: [] };
         break;

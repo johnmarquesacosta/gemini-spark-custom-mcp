@@ -115,7 +115,8 @@ export class McpAuthController {
   @Get('oauth/authorize')
   @ApiOperation({
     summary: 'Authorize Client',
-    description: 'Initiates the OAuth authorization flow by redirecting to the frontend consent screen.',
+    description:
+      'Initiates the OAuth authorization flow by redirecting to the frontend consent screen.',
   })
   @ApiQuery({ name: 'client_id', required: true, type: String })
   @ApiQuery({ name: 'redirect_uri', required: true, type: String })
@@ -148,7 +149,9 @@ export class McpAuthController {
     url.searchParams.set('code_challenge', code_challenge);
     if (state) url.searchParams.set('state', state);
 
-    this.logger.log(`[oauth/authorize] Redirecting to frontend consent: ${url.toString()}`);
+    this.logger.log(
+      `[oauth/authorize] Redirecting to frontend consent: ${url.toString()}`,
+    );
     return res.redirect(url.toString());
   }
 
@@ -156,7 +159,8 @@ export class McpAuthController {
   @UseGuards(SyncSecretGuard)
   @ApiOperation({
     summary: 'Approve OAuth Authorization',
-    description: 'Called by the frontend (S2S) to approve the authorization and generate the code.',
+    description:
+      'Called by the frontend (S2S) to approve the authorization and generate the code.',
   })
   @ApiBody({
     schema: {
@@ -171,7 +175,13 @@ export class McpAuthController {
   })
   @ApiResponse({ status: 201, description: 'Authorization code generated' })
   approve(
-    @Body() body: { userId: string; client_id: string; redirect_uri: string; code_challenge?: string },
+    @Body()
+    body: {
+      userId: string;
+      client_id: string;
+      redirect_uri: string;
+      code_challenge?: string;
+    },
     @Req() req: Request,
   ) {
     this.logger.log(`[oauth/approve] Request received for user ${body.userId}`);

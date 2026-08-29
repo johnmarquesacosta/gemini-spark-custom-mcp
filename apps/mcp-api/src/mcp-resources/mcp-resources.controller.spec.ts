@@ -3,6 +3,8 @@ import { McpResourcesController } from './mcp-resources.controller';
 import { McpResourcesService } from './mcp-resources.service';
 import { McpAuthService } from '../mcp-auth/mcp-auth.service';
 
+import { UsersService } from '../users/users.service';
+
 describe('McpResourcesController', () => {
   let controller: McpResourcesController;
   let resourcesService: McpResourcesService;
@@ -21,6 +23,12 @@ describe('McpResourcesController', () => {
           provide: McpAuthService,
           useValue: {
             verifyToken: jest.fn().mockReturnValue(true),
+          },
+        },
+        {
+          provide: UsersService,
+          useValue: {
+            findByEmail: jest.fn(),
           },
         },
       ],

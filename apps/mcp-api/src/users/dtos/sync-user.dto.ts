@@ -27,7 +27,8 @@ export class SyncUserDto {
   image?: string;
 
   @ApiPropertyOptional({
-    description: 'The Google provider account ID (optional, for future linking)',
+    description:
+      'The Google provider account ID (optional, for future linking)',
     example: '102938475610293847561',
   })
   @IsString()

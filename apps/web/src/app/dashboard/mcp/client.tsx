@@ -7,8 +7,8 @@ export function McpDashboardClient({
   initialTools,
   initialPrompts,
 }: {
-  initialTools: any[];
-  initialPrompts: any[];
+  initialTools: Record<string, unknown>[];
+  initialPrompts: Record<string, unknown>[];
 }) {
   const [activeTab, setActiveTab] = useState<"tools" | "prompts">("tools");
   const [tools, setTools] = useState(initialTools);
@@ -31,7 +31,7 @@ export function McpDashboardClient({
       if (schemaStr) {
         try {
           inputSchema = JSON.parse(schemaStr);
-        } catch (e) {
+        } catch {
           throw new Error("Invalid JSON in input schema");
         }
       }
@@ -40,21 +40,21 @@ export function McpDashboardClient({
       setName("");
       setDescription("");
       setSchemaStr("");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteTool = async (id: number) => {
+  const handleDeleteTool = async (id: string) => {
     if (!confirm("Are you sure?")) return;
     setLoading(true);
     try {
       await deleteTool(id);
       setTools(tools.filter((t) => t.id !== id));
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -70,21 +70,21 @@ export function McpDashboardClient({
       setName("");
       setDescription("");
       setContent("");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeletePrompt = async (id: number) => {
+  const handleDeletePrompt = async (id: string) => {
     if (!confirm("Are you sure?")) return;
     setLoading(true);
     try {
       await deletePrompt(id);
       setPrompts(prompts.filter((p) => p.id !== id));
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

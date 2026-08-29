@@ -21,9 +21,9 @@ describe('McpAuthController', () => {
         },
       ],
     })
-    .overrideGuard(SyncSecretGuard)
-    .useValue({ canActivate: () => true })
-    .compile();
+      .overrideGuard(SyncSecretGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<McpAuthController>(McpAuthController);
     service = module.get<McpAuthService>(McpAuthService);
@@ -49,14 +49,23 @@ describe('McpAuthController', () => {
     it('should redirect to frontend oauth consent page', () => {
       const mockReq: any = { method: 'GET', headers: {} };
       const mockRes: any = { redirect: jest.fn() };
-      
-      controller.authorize('client-1', 'http://redirect', 'state-1', 'challenge', mockReq, mockRes);
-      
+
+      controller.authorize(
+        'client-1',
+        'http://redirect',
+        'state-1',
+        'challenge',
+        mockReq,
+        mockRes,
+      );
+
       expect(mockRes.redirect).toHaveBeenCalled();
       const redirectUrl = new URL(mockRes.redirect.mock.calls[0][0]);
       expect(redirectUrl.pathname).toBe('/oauth/authorize');
       expect(redirectUrl.searchParams.get('client_id')).toBe('client-1');
-      expect(redirectUrl.searchParams.get('redirect_uri')).toBe('http://redirect');
+      expect(redirectUrl.searchParams.get('redirect_uri')).toBe(
+        'http://redirect',
+      );
       expect(redirectUrl.searchParams.get('state')).toBe('state-1');
       expect(redirectUrl.searchParams.get('code_challenge')).toBe('challenge');
     });
@@ -64,18 +73,21 @@ describe('McpAuthController', () => {
 
   describe('approve', () => {
     it('should create auth code and return it', () => {
-      const result = controller.approve({
-        userId: 'test@example.com',
-        client_id: 'client-1',
-        redirect_uri: 'http://redirect',
-        code_challenge: 'challenge'
-      }, { method: 'POST', headers: {} } as any);
+      const result = controller.approve(
+        {
+          userId: 'test@example.com',
+          client_id: 'client-1',
+          redirect_uri: 'http://redirect',
+          code_challenge: 'challenge',
+        },
+        { method: 'POST', headers: {} } as any,
+      );
 
       expect(service.createAuthorizationCode).toHaveBeenCalledWith({
         client_id: 'client-1',
         redirect_uri: 'http://redirect',
         code_challenge: 'challenge',
-        userId: 'test@example.com'
+        userId: 'test@example.com',
       });
       expect(result).toEqual({ code: 'code123' });
     });

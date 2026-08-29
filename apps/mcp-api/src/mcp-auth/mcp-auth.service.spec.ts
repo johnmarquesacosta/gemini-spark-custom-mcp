@@ -48,7 +48,7 @@ describe('McpAuthService', () => {
     });
 
     expect(tokenResponse).toHaveProperty('access_token');
-    
+
     const decoded = service.verifyToken(tokenResponse.access_token) as any;
     expect(decoded.sub).toBe('test-user@example.com');
   });

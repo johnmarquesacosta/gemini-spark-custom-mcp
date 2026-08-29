@@ -14,7 +14,11 @@ export class UsersService {
   ) {}
 
   async syncUser(body: SyncUserDto) {
-    const user = await this.validateOAuthUser(body.email, body.name, body.image);
+    const user = await this.validateOAuthUser(
+      body.email,
+      body.name,
+      body.image,
+    );
 
     this.logger.log(`User synced successfully: ${user.email} (ID: ${user.id})`);
 
@@ -64,5 +68,9 @@ export class UsersService {
 
   async findById(id: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id } });
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
   }
 }
