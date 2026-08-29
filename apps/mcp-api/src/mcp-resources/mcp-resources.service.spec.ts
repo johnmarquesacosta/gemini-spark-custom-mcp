@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { McpResourcesService } from './mcp-resources.service';
 import { McpTool } from './entities/mcp-tool.entity';
 import { McpPrompt } from './entities/mcp-prompt.entity';
-import { PostsService } from '../posts/posts.service';
+import { McpRegistryService } from './mcp-registry.service';
 
 describe('McpResourcesService', () => {
   let service: McpResourcesService;
@@ -22,13 +22,9 @@ describe('McpResourcesService', () => {
     delete: jest.fn(),
   };
 
-  const mockPostsService = {
-    findAll: jest.fn(),
-    findOne: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    publish: jest.fn(),
-    remove: jest.fn(),
+  const mockRegistryService = {
+    getTools: jest.fn().mockReturnValue([]),
+    getTool: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -44,8 +40,8 @@ describe('McpResourcesService', () => {
           useValue: mockPromptRepository,
         },
         {
-          provide: PostsService,
-          useValue: mockPostsService,
+          provide: McpRegistryService,
+          useValue: mockRegistryService,
         },
       ],
     }).compile();
@@ -72,12 +68,15 @@ describe('McpResourcesService', () => {
 
     it('should handle tools/list and append static posts tools', async () => {
       mockToolRepository.find.mockResolvedValue([]);
+      mockRegistryService.getTools.mockReturnValue([
+        { name: 'mock_tool', description: 'Mock Tool', inputSchema: {} },
+      ]);
       const result = await service.handleRpcRequest('user-1', {
         method: 'tools/list',
       });
       expect(result.tools).toBeDefined();
       expect(result.tools.length).toBeGreaterThan(0);
-      expect(result.tools[0].name).toBe('posts_list');
+      expect(result.tools[0].name).toBe('mock_tool');
     });
 
     it('should handle prompts/list', async () => {

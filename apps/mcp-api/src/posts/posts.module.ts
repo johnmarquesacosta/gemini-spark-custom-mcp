@@ -7,13 +7,14 @@ import { PostImage } from './entities/post-image.entity';
 import { PostSource } from './entities/post-source.entity';
 import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
+import { PostsMcpHandler } from './posts.mcp-handler';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Post, PostImage, PostSource, Category, Tag]),
   ],
   controllers: [PostsController],
-  providers: [PostsService],
+  providers: [PostsService, PostsMcpHandler],
   exports: [PostsService],
 })
 export class PostsModule {}
