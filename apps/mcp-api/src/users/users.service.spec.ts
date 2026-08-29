@@ -132,4 +132,26 @@ describe('UsersService', () => {
       expect(result).toEqual(user);
     });
   });
+
+  describe('syncUser', () => {
+    it('should call validateOAuthUser and return the user details', async () => {
+      const existingUser = {
+        id: '123',
+        email: 'test@example.com',
+        name: 'Test Name',
+      };
+      jest.spyOn(service, 'validateOAuthUser').mockResolvedValue(existingUser as any);
+
+      const result = await service.syncUser({
+        email: 'test@example.com',
+        name: 'Test Name',
+      });
+
+      expect(service.validateOAuthUser).toHaveBeenCalledWith('test@example.com', 'Test Name', undefined);
+      expect(result).toEqual({
+        success: true,
+        user: { id: '123', email: 'test@example.com' },
+      });
+    });
+  });
 });

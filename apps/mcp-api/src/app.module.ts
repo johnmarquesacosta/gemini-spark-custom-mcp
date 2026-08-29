@@ -21,7 +21,7 @@ import { UsersModule } from './users/users.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME') || configService.get<string>('POSTGRES_DB'),
         autoLoadEntities: true,
-        synchronize: configService.get<string>('NODE_ENV') !== 'production', // Use carefully in production
+        synchronize: configService.get<string>('NODE_ENV') !== 'production' || configService.get<string>('TYPEORM_SYNC') === 'true', // Use carefully in production
       }),
       inject: [ConfigService],
     }),
