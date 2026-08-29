@@ -7,6 +7,7 @@ import { McpAuthModule } from './mcp-auth/mcp-auth.module';
 import { McpResourcesModule } from './mcp-resources/mcp-resources.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { UsersModule } from './users/users.module';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UsersModule } from './users/users.module';
     McpAuthModule,
     McpResourcesModule,
     UsersModule,
+    PostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
