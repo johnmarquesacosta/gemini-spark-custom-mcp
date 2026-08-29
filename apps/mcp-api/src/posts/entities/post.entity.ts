@@ -1,6 +1,14 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-  ManyToOne, OneToMany, ManyToMany, JoinTable, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
+  Index,
 } from 'typeorm';
 import { PostStatus } from '../enums/post-status.enum';
 import { ArticleSchemaType } from '../enums/article-schema-type.enum';
@@ -17,6 +25,9 @@ export class Post {
   id: string;
 
   // --- Multi-tenant / multi-idioma ---
+  @Column()
+  userId: string;
+
   // @ManyToOne(() => Site, { nullable: false })
   // site: Site;
 
@@ -39,7 +50,11 @@ export class Post {
   @Column({ type: 'enum', enum: PostStatus, default: PostStatus.DRAFT })
   status: PostStatus;
 
-  @Column({ type: 'enum', enum: ArticleSchemaType, default: ArticleSchemaType.BLOG_POSTING })
+  @Column({
+    type: 'enum',
+    enum: ArticleSchemaType,
+    default: ArticleSchemaType.BLOG_POSTING,
+  })
   schemaType: ArticleSchemaType;
 
   @Column({ type: 'int', nullable: true })

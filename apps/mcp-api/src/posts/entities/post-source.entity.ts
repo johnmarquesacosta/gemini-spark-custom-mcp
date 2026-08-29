@@ -1,12 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Post } from './post.entity';
+import type { Post } from './post.entity';
 
 @Entity('post_sources')
 export class PostSource {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Post, (post) => post.sources, { onDelete: 'CASCADE' })
+  @ManyToOne('Post', (post: Post) => post.sources, { onDelete: 'CASCADE' })
   post: Post;
 
   @Column({ length: 255 })

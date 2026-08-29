@@ -1,7 +1,11 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
 } from 'typeorm';
-import { Post } from './post.entity';
+import type { Post } from './post.entity';
 import { PostImageRole } from '../enums/post-image-role.enum';
 import { ImageGenerationStatus } from '../enums/post-image-generation-status.enum';
 
@@ -10,7 +14,7 @@ export class PostImage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Post, (post) => post.images, { onDelete: 'CASCADE' })
+  @ManyToOne('Post', (post: Post) => post.images, { onDelete: 'CASCADE' })
   post: Post;
 
   @Column({ type: 'enum', enum: PostImageRole })
@@ -27,7 +31,11 @@ export class PostImage {
   promptModel: string; // qual LLM gerou o prompt (ex: 'gpt-4.1', 'claude-sonnet-4-6') — rastreabilidade
 
   // --- Resultado da geração ---
-  @Column({ type: 'enum', enum: ImageGenerationStatus, default: ImageGenerationStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: ImageGenerationStatus,
+    default: ImageGenerationStatus.PENDING,
+  })
   generationStatus: ImageGenerationStatus;
 
   @Column({ length: 100, nullable: true })

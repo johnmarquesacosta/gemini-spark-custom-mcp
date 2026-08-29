@@ -8,12 +8,14 @@ import { McpTool } from './entities/mcp-tool.entity';
 import { McpPrompt } from './entities/mcp-prompt.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
+import { PostsModule } from '../posts/posts.module';
 
 @Module({
   imports: [
     McpAuthModule,
     ConfigModule,
     UsersModule,
+    PostsModule,
     TypeOrmModule.forFeature([McpTool, McpPrompt]),
   ],
   controllers: [McpResourcesController, McpManagementController],

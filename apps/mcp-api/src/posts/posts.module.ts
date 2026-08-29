@@ -10,13 +10,7 @@ import { Tag } from './entities/tag.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Post,
-      PostImage,
-      PostSource,
-      Category,
-      Tag,
-    ]),
+    TypeOrmModule.forFeature([Post, PostImage, PostSource, Category, Tag]),
   ],
   controllers: [PostsController],
   providers: [PostsService],

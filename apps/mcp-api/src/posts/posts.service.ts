@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Post } from './entities/post.entity';
@@ -28,10 +32,12 @@ export class PostsService {
     return { wordCount, readingTimeMinutes };
   }
 
-  async create(createPostDto: CreatePostDto): Promise<Post> {
+  async create(userId: string, createPostDto: CreatePostDto): Promise<Post> {
     const { categoryId, tagIds, ...postData } = createPostDto;
 
-    const category = await this.categoriesRepository.findOne({ where: { id: categoryId } });
+    const category = await this.categoriesRepository.findOne({
+      where: { id: categoryId },
+    });
     if (!category) {
       throw new NotFoundException(`Category with ID ${categoryId} not found`);
     }
@@ -41,10 +47,13 @@ export class PostsService {
       tags = await this.tagsRepository.findBy({ id: In(tagIds) });
     }
 
-    const { wordCount, readingTimeMinutes } = this.calculateMetrics(postData.content);
+    const { wordCount, readingTimeMinutes } = this.calculateMetrics(
+      postData.content,
+    );
 
     const post = this.postsRepository.create({
       ...postData,
+      userId,
       category,
       tags,
       wordCount,
@@ -54,8 +63,9 @@ export class PostsService {
     return this.postsRepository.save(post);
   }
 
-  async findAll(): Promise<Post[]> {
+  async findAll(userId: string): Promise<Post[]> {
     return this.postsRepository.find({
+      where: { userId },
       relations: {
         category: true,
         tags: true,
@@ -65,9 +75,9 @@ export class PostsService {
     });
   }
 
-  async findOne(id: string): Promise<Post> {
+  async findOne(id: string, userId: string): Promise<Post> {
     const post = await this.postsRepository.findOne({
-      where: { id },
+      where: { id, userId },
       relations: {
         category: true,
         tags: true,
@@ -81,13 +91,20 @@ export class PostsService {
     return post;
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto): Promise<Post> {
-    const post = await this.findOne(id);
+  async update(
+    id: string,
+    userId: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<Post> {
+    const post = await this.findOne(id, userId);
     const { categoryId, tagIds, ...postData } = updatePostDto;
 
     if (categoryId) {
-      const category = await this.categoriesRepository.findOne({ where: { id: categoryId } });
-      if (!category) throw new NotFoundException(`Category with ID ${categoryId} not found`);
+      const category = await this.categoriesRepository.findOne({
+        where: { id: categoryId },
+      });
+      if (!category)
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
       post.category = category;
     }
 
@@ -99,7 +116,9 @@ export class PostsService {
     Object.assign(post, postData);
 
     if (postData.content !== undefined) {
-      const { wordCount, readingTimeMinutes } = this.calculateMetrics(postData.content);
+      const { wordCount, readingTimeMinutes } = this.calculateMetrics(
+        postData.content,
+      );
       post.wordCount = wordCount;
       post.readingTimeMinutes = readingTimeMinutes;
     }
@@ -107,9 +126,9 @@ export class PostsService {
     return this.postsRepository.save(post);
   }
 
-  async publish(id: string): Promise<Post> {
-    const post = await this.findOne(id);
-    
+  async publish(id: string, userId: string): Promise<Post> {
+    const post = await this.findOne(id, userId);
+
     if (post.status === PostStatus.PUBLISHED) {
       throw new BadRequestException('Post is already published');
     }
@@ -120,8 +139,8 @@ export class PostsService {
     return this.postsRepository.save(post);
   }
 
-  async remove(id: string): Promise<void> {
-    const post = await this.findOne(id);
+  async remove(id: string, userId: string): Promise<void> {
+    const post = await this.findOne(id, userId);
     await this.postsRepository.remove(post);
   }
 }
