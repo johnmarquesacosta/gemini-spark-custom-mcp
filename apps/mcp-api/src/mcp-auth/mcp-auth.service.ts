@@ -2,12 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID, createHash } from 'crypto';
 import * as jwt from 'jsonwebtoken';
 
-// Único usuário do POC — hardcoded, sem hash, sem validação real
-const POC_USER = {
-  email: 'johnmarquesacosta@gmail.com',
-  password: 'John123$',
-};
-
 interface RegisteredClient {
   client_id: string;
   redirect_uris: string[];
@@ -17,6 +11,7 @@ interface AuthCode {
   client_id: string;
   redirect_uri: string;
   code_challenge?: string;
+  userId: string;
   expiresAt: number;
 }
 
@@ -44,17 +39,18 @@ export class McpAuthService {
     };
   }
 
-  // Authorize — auto-aprova direto pro POC_USER, sem tela nenhuma
   createAuthorizationCode(params: {
     client_id: string;
     redirect_uri: string;
     code_challenge?: string;
+    userId: string;
   }) {
     const code = randomUUID();
     this.codes.set(code, {
       client_id: params.client_id,
       redirect_uri: params.redirect_uri,
       code_challenge: params.code_challenge,
+      userId: params.userId,
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
     });
 
@@ -88,7 +84,7 @@ export class McpAuthService {
 
     this.codes.delete(params.code); // uso único
 
-    const access_token = jwt.sign({ sub: POC_USER.email }, this.jwtSecret, {
+    const access_token = jwt.sign({ sub: stored.userId }, this.jwtSecret, {
       expiresIn: '1h',
     });
 

@@ -7,6 +7,7 @@ import {
   Res,
   Req,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import type { Response, Request } from 'express';
 import { McpAuthService } from './mcp-auth.service';
+import { SyncSecretGuard } from '../users/guards/sync-secret.guard';
 
 @ApiTags('OAuth')
 @Controller()
@@ -113,7 +115,7 @@ export class McpAuthController {
   @Get('oauth/authorize')
   @ApiOperation({
     summary: 'Authorize Client',
-    description: 'Initiates the OAuth authorization flow.',
+    description: 'Initiates the OAuth authorization flow by redirecting to the frontend consent screen.',
   })
   @ApiQuery({ name: 'client_id', required: true, type: String })
   @ApiQuery({ name: 'redirect_uri', required: true, type: String })
@@ -121,7 +123,7 @@ export class McpAuthController {
   @ApiQuery({ name: 'code_challenge', required: true, type: String })
   @ApiResponse({
     status: 302,
-    description: 'Redirects back to the client with authorization code',
+    description: 'Redirects to the frontend consent screen',
   })
   authorize(
     @Query('client_id') client_id: string,
@@ -139,18 +141,47 @@ export class McpAuthController {
       `[oauth/authorize] Query: client_id=${client_id}, redirect_uri=${redirect_uri}, state=${state}, code_challenge=${code_challenge}`,
     );
 
-    const code = this.auth.createAuthorizationCode({
-      client_id,
-      redirect_uri,
-      code_challenge,
-    });
-
-    const url = new URL(redirect_uri);
-    url.searchParams.set('code', code);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const url = new URL('/oauth/authorize', frontendUrl);
+    url.searchParams.set('client_id', client_id);
+    url.searchParams.set('redirect_uri', redirect_uri);
+    url.searchParams.set('code_challenge', code_challenge);
     if (state) url.searchParams.set('state', state);
 
-    this.logger.log(`[oauth/authorize] Redirecting to ${url.toString()}`);
+    this.logger.log(`[oauth/authorize] Redirecting to frontend consent: ${url.toString()}`);
     return res.redirect(url.toString());
+  }
+
+  @Post('oauth/approve')
+  @UseGuards(SyncSecretGuard)
+  @ApiOperation({
+    summary: 'Approve OAuth Authorization',
+    description: 'Called by the frontend (S2S) to approve the authorization and generate the code.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string' },
+        client_id: { type: 'string' },
+        redirect_uri: { type: 'string' },
+        code_challenge: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Authorization code generated' })
+  approve(
+    @Body() body: { userId: string; client_id: string; redirect_uri: string; code_challenge?: string },
+    @Req() req: Request,
+  ) {
+    this.logger.log(`[oauth/approve] Request received for user ${body.userId}`);
+    const code = this.auth.createAuthorizationCode({
+      client_id: body.client_id,
+      redirect_uri: body.redirect_uri,
+      code_challenge: body.code_challenge,
+      userId: body.userId,
+    });
+    return { code };
   }
 
   @Post('oauth/token')

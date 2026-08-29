@@ -25,7 +25,7 @@ export class McpAuthGuard implements CanActivate {
     }
 
     try {
-      this.auth.verifyToken(token);
+      req.user = this.auth.verifyToken(token);
       return true;
     } catch {
       throw new UnauthorizedException();

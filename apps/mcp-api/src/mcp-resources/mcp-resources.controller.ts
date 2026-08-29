@@ -88,7 +88,8 @@ export class McpResourcesController {
       return res.status(200).send();
     }
 
-    const result = this.resourcesService.handleRpcRequest(rpcRequest);
+    const userId = (req as any).user?.sub;
+    const result = await this.resourcesService.handleRpcRequest(userId, rpcRequest);
 
     return res.json({
       jsonrpc: '2.0',

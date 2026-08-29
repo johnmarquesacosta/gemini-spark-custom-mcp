@@ -25,12 +25,31 @@ describe('McpAuthService', () => {
     expect(result.redirect_uris).toEqual(['http://localhost/callback']);
   });
 
-  it('should create authorization code', () => {
+  it('should create authorization code for a specific user', () => {
     const code = service.createAuthorizationCode({
       client_id: '123',
       redirect_uri: 'http://localhost/callback',
+      userId: 'test-user@example.com',
     });
     expect(code).toBeDefined();
     expect(typeof code).toBe('string');
+  });
+
+  it('should exchange token and include userId in jwt sub claim', () => {
+    const code = service.createAuthorizationCode({
+      client_id: '123',
+      redirect_uri: 'http://localhost/callback',
+      userId: 'test-user@example.com',
+    });
+
+    const tokenResponse = service.exchangeToken({
+      code,
+      redirect_uri: 'http://localhost/callback',
+    });
+
+    expect(tokenResponse).toHaveProperty('access_token');
+    
+    const decoded = service.verifyToken(tokenResponse.access_token) as any;
+    expect(decoded.sub).toBe('test-user@example.com');
   });
 });

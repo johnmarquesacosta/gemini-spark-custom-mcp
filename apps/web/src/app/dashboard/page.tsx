@@ -42,8 +42,22 @@ export default async function DashboardPage() {
           <p className="mt-2 text-neutral-400">
             Seu login com o Google foi concluído com sucesso.
           </p>
-          <div className="mt-6 rounded-lg bg-black/50 p-4 font-mono text-sm text-neutral-300">
+          <div className="mt-6 rounded-lg bg-black/50 p-4 font-mono text-sm text-neutral-300 mb-6">
             <p>Email: {session.user.email}</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a 
+              href="/dashboard/mcp"
+              className="group block rounded-xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-colors"
+            >
+              <h3 className="text-lg font-medium text-white group-hover:text-blue-400 transition-colors">
+                MCP Resources
+              </h3>
+              <p className="mt-2 text-sm text-neutral-400">
+                Manage your Tools and Prompts for the Model Context Protocol.
+              </p>
+            </a>
           </div>
         </div>
       </div>

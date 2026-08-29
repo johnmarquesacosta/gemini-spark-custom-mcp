@@ -11,7 +11,12 @@ describe('McpResourcesController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [McpResourcesController],
       providers: [
-        McpResourcesService,
+        {
+          provide: McpResourcesService,
+          useValue: {
+            handleRpcRequest: jest.fn(),
+          },
+        },
         {
           provide: McpAuthService,
           useValue: {
