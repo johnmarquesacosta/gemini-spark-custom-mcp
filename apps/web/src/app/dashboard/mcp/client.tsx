@@ -3,12 +3,26 @@
 import { useState } from "react";
 import { createTool, deleteTool, createPrompt, deletePrompt } from "../../actions/mcp";
 
+export interface McpTool {
+  id: string;
+  name: string;
+  description: string;
+  [key: string]: unknown;
+}
+
+export interface McpPrompt {
+  id: string;
+  name: string;
+  description: string;
+  [key: string]: unknown;
+}
+
 export function McpDashboardClient({
   initialTools,
   initialPrompts,
 }: {
-  initialTools: Record<string, unknown>[];
-  initialPrompts: Record<string, unknown>[];
+  initialTools: McpTool[];
+  initialPrompts: McpPrompt[];
 }) {
   const [activeTab, setActiveTab] = useState<"tools" | "prompts">("tools");
   const [tools, setTools] = useState(initialTools);
