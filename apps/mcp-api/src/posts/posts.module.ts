@@ -9,9 +9,12 @@ import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
 import { PostsMcpHandler } from './posts.mcp-handler';
 
+import { McpAuthModule } from '../mcp-auth/mcp-auth.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Post, PostImage, PostSource, Category, Tag]),
+    McpAuthModule,
   ],
   controllers: [PostsController],
   providers: [PostsService, PostsMcpHandler],

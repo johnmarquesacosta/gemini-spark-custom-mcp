@@ -8,6 +8,6 @@ import { UsersModule } from '../users/users.module';
   imports: [UsersModule],
   controllers: [McpAuthController],
   providers: [McpAuthService, McpAuthGuard],
-  exports: [McpAuthService, McpAuthGuard],
+  exports: [McpAuthService, McpAuthGuard, UsersModule],
 })
 export class McpAuthModule {}
