@@ -39,8 +39,6 @@ services:
       # Exposição de porta padrão do Coolify V4
       - SERVICE_URL_WEB_3000
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${SERVICE_URL_API_3001}}
-      - RUNTIME_API_URL=${NEXT_PUBLIC_API_URL:-${SERVICE_URL_API_3001}}
     depends_on:
       api:
         condition: service_healthy

@@ -1,54 +1,52 @@
-# ============================================================
-# Stage 1: builder — compila shared-types + Next.js
-# ============================================================
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-RUN corepack enable && corepack prepare pnpm@10.9.0 --activate
-
+FROM base AS builder
+# Necessário para algumas dependências nativas
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json turbo.json ./
-COPY packages/shared-types/package.json ./packages/shared-types/
-COPY packages/config/package.json        ./packages/config/
-COPY apps/web/package.json               ./apps/web/
+# Copia os arquivos de lock e config do workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
-RUN pnpm install --frozen-lockfile
+# Copia os pacotes e package.json do web para instalar dependências
+COPY apps/web/package.json ./apps/web/
+# Se houver pacotes internos no futuro, copia-os também
+COPY packages ./packages/
 
-COPY packages/ ./packages/
-COPY apps/web/ ./apps/web/
+# Instala as dependências de forma otimizada usando cache do docker
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Build shared-types antes do Next.js
-RUN pnpm --filter @repo/shared-types build
+# Copia o código-fonte restante
+COPY . .
 
-# Build do Next.js (standalone para imagem enxuta)
+# Faz o build do app web
 ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN pnpm --filter web build
+RUN pnpm run build --filter=web
 
-# ============================================================
-# Stage 2: runner — imagem final
-# ============================================================
-FROM node:22-alpine AS runner
+FROM base AS runner
+WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser  --system --uid 1001 nextjs
+RUN adduser --system --uid 1001 nextjs
 
-WORKDIR /app
-
-# Copia o output standalone do Next.js
+# Copia a saída "standalone" gerada pelo Next.js (arquivos reduzidos)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static     ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public            ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+
+# Se você criar uma pasta public no futuro, descomente a linha abaixo:
+# COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
 USER nextjs
 
 EXPOSE 3000
-
 ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
+ENV HOSTNAME="0.0.0.0"
 
+# O Next.js no modo standalone dentro de monorepos reproduz a estrutura de pastas
 CMD ["node", "apps/web/server.js"]
