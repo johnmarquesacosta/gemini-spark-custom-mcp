@@ -8,7 +8,9 @@ import { PostSource } from './entities/post-source.entity';
 import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
 import { PostsMcpHandler } from './posts.mcp-handler';
-
+import { CategoriesService } from './categories.service';
+import { CategoriesController } from './categories.controller';
+import { CategoriesMcpHandler } from './categories.mcp-handler';
 import { McpAuthModule } from '../mcp-auth/mcp-auth.module';
 
 @Module({
@@ -16,8 +18,13 @@ import { McpAuthModule } from '../mcp-auth/mcp-auth.module';
     TypeOrmModule.forFeature([Post, PostImage, PostSource, Category, Tag]),
     McpAuthModule,
   ],
-  controllers: [PostsController],
-  providers: [PostsService, PostsMcpHandler],
-  exports: [PostsService],
+  controllers: [PostsController, CategoriesController],
+  providers: [
+    PostsService, 
+    PostsMcpHandler, 
+    CategoriesService, 
+    CategoriesMcpHandler
+  ],
+  exports: [PostsService, CategoriesService],
 })
 export class PostsModule {}

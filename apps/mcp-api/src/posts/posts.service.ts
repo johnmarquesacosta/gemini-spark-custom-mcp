@@ -36,7 +36,7 @@ export class PostsService {
     const { categoryId, tagIds, ...postData } = createPostDto;
 
     const category = await this.categoriesRepository.findOne({
-      where: { id: categoryId },
+      where: { id: categoryId, userId },
     });
     if (!category) {
       throw new NotFoundException(`Category with ID ${categoryId} not found`);
@@ -101,7 +101,7 @@ export class PostsService {
 
     if (categoryId) {
       const category = await this.categoriesRepository.findOne({
-        where: { id: categoryId },
+        where: { id: categoryId, userId },
       });
       if (!category)
         throw new NotFoundException(`Category with ID ${categoryId} not found`);
