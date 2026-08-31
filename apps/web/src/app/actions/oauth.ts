@@ -20,7 +20,7 @@ export async function approveAuthorization(data: {
       "x-sync-secret": process.env.AUTH_SECRET || "",
     },
     body: JSON.stringify({
-      userId: session.user.email,
+      userId: session.user.id || session.user.email,
       client_id: data.client_id,
       redirect_uri: data.redirect_uri,
       code_challenge: data.code_challenge,

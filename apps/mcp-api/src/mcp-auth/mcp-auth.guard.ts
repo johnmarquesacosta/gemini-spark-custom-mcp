@@ -19,7 +19,12 @@ export class McpAuthGuard implements CanActivate {
     const authHeader = req.headers['authorization'];
     const token = authHeader?.replace('Bearer ', '');
 
+    console.log(
+      `[McpAuthGuard] Check - URL: ${req.url}, Method: ${req.method}, Token present: ${!!token}`,
+    );
+
     if (!token) {
+      console.log(`[McpAuthGuard] No token provided`);
       const res = context.switchToHttp().getResponse();
       res.setHeader(
         'WWW-Authenticate',
@@ -31,18 +36,28 @@ export class McpAuthGuard implements CanActivate {
     try {
       const payload = this.auth.verifyToken(token);
       if (typeof payload === 'string' || !payload?.sub) {
+        console.log(`[McpAuthGuard] Invalid payload`);
         throw new UnauthorizedException();
       }
 
-      const user = await this.usersService.findById(payload.sub as string);
-      if (!user) throw new UnauthorizedException();
+      const subStr = payload.sub as string;
+      const user = subStr.includes('@')
+        ? await this.usersService.findByEmail(subStr)
+        : await this.usersService.findById(subStr);
+
+      if (!user) {
+        console.log(`[McpAuthGuard] User not found for sub: ${payload.sub}`);
+        throw new UnauthorizedException();
+      }
 
       req.user = {
         ...payload,
         sub: user.id, // Garante que o sub é sempre o UUID do usuário
       };
+      console.log(`[McpAuthGuard] Authorized user: ${user.email}`);
       return true;
-    } catch {
+    } catch (err: any) {
+      console.log(`[McpAuthGuard] Error verifying token:`, err.message);
       throw new UnauthorizedException();
     }
   }
