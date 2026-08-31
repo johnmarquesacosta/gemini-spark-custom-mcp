@@ -3,9 +3,20 @@ import { PostEditor } from "@/components/posts/PostEditor";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { notFound } from "next/navigation";
 
-export default async function NewPostPage() {
-  const categories = await api.get("/categories");
+export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  
+  let post;
+  let categories = [];
+
+  try {
+    post = await api.get(`/posts/${id}`);
+    categories = await api.get("/categories");
+  } catch {
+    notFound();
+  }
 
   return (
     <div>
@@ -16,7 +27,7 @@ export default async function NewPostPage() {
         <ArrowLeft size={16} />
         Back to Articles
       </Link>
-      <PostEditor categories={categories} />
+      <PostEditor post={post} categories={categories} />
     </div>
   );
 }

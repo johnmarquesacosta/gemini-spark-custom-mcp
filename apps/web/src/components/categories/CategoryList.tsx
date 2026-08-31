@@ -54,10 +54,10 @@ export async function CategoryList() {
             {cat.wordpressCategoryId || "—"}
           </div>
           <div className="col-span-2 flex justify-end gap-3">
-            <Link href="#" className="text-gray-400 hover:text-ink transition-colors" title="Edit (Coming Soon)">
+            <Link href={`/dashboard/categories/${cat.id}/edit`} className="text-gray-400 hover:text-ink transition-colors" title="Edit">
               <Edit2 size={16} />
             </Link>
-            <Link href="#" className="text-gray-400 hover:text-crimson transition-colors" title="Delete (Coming Soon)">
+            <Link href="#" className="text-gray-400 hover:text-crimson transition-colors" title="Delete">
               <Trash2 size={16} />
             </Link>
           </div>

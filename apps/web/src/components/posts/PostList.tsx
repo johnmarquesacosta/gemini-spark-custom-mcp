@@ -66,7 +66,7 @@ export async function PostList() {
             {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : "—"}
           </div>
           <div className="col-span-2 flex justify-end gap-3">
-            <Link href="#" className="text-gray-400 hover:text-ink transition-colors" title="Edit (Coming Soon)">
+            <Link href={`/dashboard/posts/${post.id}/edit`} className="text-gray-400 hover:text-ink transition-colors" title="Edit">
               <Edit2 size={16} />
             </Link>
             <Link href="#" className="text-gray-400 hover:text-ink transition-colors" title="View live (Coming Soon)">
