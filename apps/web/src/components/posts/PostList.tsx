@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Edit2, ExternalLink } from "lucide-react";
 import { api } from "../../lib/api";
 
@@ -65,12 +66,12 @@ export async function PostList() {
             {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : "—"}
           </div>
           <div className="col-span-2 flex justify-end gap-3">
-            <button className="text-gray-400 hover:text-ink transition-colors" title="Edit">
+            <Link href="#" className="text-gray-400 hover:text-ink transition-colors" title="Edit (Coming Soon)">
               <Edit2 size={16} />
-            </button>
-            <button className="text-gray-400 hover:text-ink transition-colors" title="View live">
+            </Link>
+            <Link href="#" className="text-gray-400 hover:text-ink transition-colors" title="View live (Coming Soon)">
               <ExternalLink size={16} />
-            </button>
+            </Link>
           </div>
         </div>
       ))}

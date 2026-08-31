@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Edit2, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
 
@@ -53,12 +54,12 @@ export async function CategoryList() {
             {cat.wordpressCategoryId || "—"}
           </div>
           <div className="col-span-2 flex justify-end gap-3">
-            <button className="text-gray-400 hover:text-ink transition-colors" title="Edit">
+            <Link href="#" className="text-gray-400 hover:text-ink transition-colors" title="Edit (Coming Soon)">
               <Edit2 size={16} />
-            </button>
-            <button className="text-gray-400 hover:text-crimson transition-colors" title="Delete">
+            </Link>
+            <Link href="#" className="text-gray-400 hover:text-crimson transition-colors" title="Delete (Coming Soon)">
               <Trash2 size={16} />
-            </button>
+            </Link>
           </div>
         </div>
       ))}

@@ -21,17 +21,17 @@ export class CategoriesController {
 
   @Post()
   create(@Request() req, @Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoriesService.create(req.user.userId, createCategoryDto);
+    return this.categoriesService.create(req.user?.sub, createCategoryDto);
   }
 
   @Get()
   findAll(@Request() req) {
-    return this.categoriesService.findAll(req.user.userId);
+    return this.categoriesService.findAll(req.user?.sub);
   }
 
   @Get(':id')
   findOne(@Request() req, @Param('id') id: string) {
-    return this.categoriesService.findOne(id, req.user.userId);
+    return this.categoriesService.findOne(id, req.user?.sub);
   }
 
   @Patch(':id')
@@ -40,15 +40,11 @@ export class CategoriesController {
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return this.categoriesService.update(
-      id,
-      req.user.userId,
-      updateCategoryDto,
-    );
+    return this.categoriesService.update(id, req.user?.sub, updateCategoryDto);
   }
 
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
-    return this.categoriesService.remove(id, req.user.userId);
+    return this.categoriesService.remove(id, req.user?.sub);
   }
 }

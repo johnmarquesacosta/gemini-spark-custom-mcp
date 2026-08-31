@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { LayoutDashboard, FileText, Tags, LogOut } from "lucide-react";
+import { signOut } from "@/auth";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,10 +44,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="p-4 border-t border-gray-800">
-          <button className="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded hover:bg-gray-800 transition-colors text-sm font-medium text-gray-400 hover:text-white">
-            <LogOut size={18} />
-            Sign Out
-          </button>
+          <form
+            action={async () => {
+              "use server";
+              await signOut();
+            }}
+          >
+            <button type="submit" className="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded hover:bg-gray-800 transition-colors text-sm font-medium text-gray-400 hover:text-white">
+              <LogOut size={18} />
+              Sign Out
+            </button>
+          </form>
         </div>
       </aside>
 
