@@ -19,7 +19,9 @@ describe('McpAuthController', () => {
             registerClient: jest.fn().mockReturnValue({ client_id: 'test' }),
             createAuthorizationCode: jest.fn().mockReturnValue('code123'),
             exchangeToken: jest.fn().mockReturnValue({ access_token: 'token' }),
-            generateWebToken: jest.fn().mockReturnValue({ access_token: 'web_token' }),
+            generateWebToken: jest
+              .fn()
+              .mockReturnValue({ access_token: 'web_token' }),
           },
         },
         {

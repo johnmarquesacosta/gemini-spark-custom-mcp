@@ -20,6 +20,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
+
   
   const response = await fetch(url, {
     ...options,

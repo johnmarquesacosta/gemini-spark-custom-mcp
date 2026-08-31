@@ -34,12 +34,12 @@ export class McpAuthGuard implements CanActivate {
         throw new UnauthorizedException();
       }
 
-      const user = await this.usersService.findByEmail(payload.sub as string);
+      const user = await this.usersService.findById(payload.sub as string);
       if (!user) throw new UnauthorizedException();
 
       req.user = {
         ...payload,
-        sub: user.id, // Substitui o email pelo UUID correto
+        sub: user.id, // Garante que o sub é sempre o UUID do usuário
       };
       return true;
     } catch {

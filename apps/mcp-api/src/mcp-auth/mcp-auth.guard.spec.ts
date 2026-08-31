@@ -10,7 +10,7 @@ describe('McpAuthGuard', () => {
 
   beforeEach(() => {
     service = { verifyToken: jest.fn() } as unknown as McpAuthService;
-    usersService = { findByEmail: jest.fn() } as unknown as UsersService;
+    usersService = { findById: jest.fn() } as unknown as UsersService;
     guard = new McpAuthGuard(service, usersService);
   });
 
@@ -59,7 +59,7 @@ describe('McpAuthGuard', () => {
     (service.verifyToken as jest.Mock).mockReturnValue({
       sub: 'test@example.com',
     });
-    (usersService.findByEmail as jest.Mock).mockResolvedValue(null);
+    (usersService.findById as jest.Mock).mockResolvedValue(null);
 
     await expect(guard.canActivate(mockContext)).rejects.toThrow(
       UnauthorizedException,
@@ -79,7 +79,7 @@ describe('McpAuthGuard', () => {
     (service.verifyToken as jest.Mock).mockReturnValue({
       sub: 'test@example.com',
     });
-    (usersService.findByEmail as jest.Mock).mockResolvedValue({
+    (usersService.findById as jest.Mock).mockResolvedValue({
       id: 'user-uuid',
     });
 
