@@ -1,7 +1,6 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Edit2, Trash2 } from "lucide-react";
+import { api } from "../../lib/api";
 
 interface Category {
   id: string;
@@ -10,35 +9,19 @@ interface Category {
   wordpressCategoryId?: number;
 }
 
-export function CategoryList() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export async function CategoryList() {
+  let categories: Category[] = [];
 
-  useEffect(() => {
-    // In a real app, you'd pass the auth token.
-    // For now, we'll try to fetch or use placeholder data if the API isn't reachable
-    fetch("http://localhost:3001/categories")
-      .then((res) => {
-        if (!res.ok) throw new Error("API failed");
-        return res.json();
-      })
-      .then((data) => {
-        setCategories(data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        // Fallback for visual design testing
-        setCategories([
-          { id: "1", name: "Technology", slug: "technology", wordpressCategoryId: 10 },
-          { id: "2", name: "Design", slug: "design", wordpressCategoryId: 12 },
-          { id: "3", name: "Culture", slug: "culture" },
-        ]);
-        setIsLoading(false);
-      });
-  }, []);
-
-  if (isLoading) {
-    return <div className="text-gray-500 font-medium">Loading taxonomy...</div>;
+  try {
+    categories = await api.get("/categories");
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return (
+      <div className="py-12 text-center text-red-500">
+        <p className="font-medium">Error loading categories.</p>
+        <p className="text-sm mt-1">Please try again later.</p>
+      </div>
+    );
   }
 
   if (categories.length === 0) {

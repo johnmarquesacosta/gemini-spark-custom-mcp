@@ -11,11 +11,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/", // Usaremos a página inicial como login
   },
+
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
+    async jwt({ token, account, user }) {
+      // Se acabou de fazer login (account existe), fazemos o sync
+      if (account?.provider === "google" && user) {
         try {
-          // Estratégia 1: Sincronização com a mcp-api
           const response = await fetch(`${process.env.MCP_API_URL}/auth/sync`, {
             method: "POST",
             headers: {
@@ -30,33 +31,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }),
           });
 
-          if (!response.ok) {
+          if (response.ok) {
+            const data = await response.json();
+            // Salva o token gerado pelo backend no JWT do NextAuth
+            token.accessToken = data.accessToken;
+            token.sub = data.user.id; // Guarda o ID do nosso banco
+          } else {
             console.error(
               "Erro ao sincronizar usuário com a mcp-api",
               await response.text(),
             );
-            // Em produção, você pode querer retornar `false` aqui para impedir o login
-            // caso o backend rejeite.
           }
-
-          return true;
         } catch (error) {
           console.error("Erro de conexão com a mcp-api", error);
-          // Retornamos true provisoriamente para não bloquear o fluxo de login
-          // enquanto a mcp-api não está totalmente implementada.
-          return true;
         }
-      }
-      return true;
-    },
-    async jwt({ token, account }) {
-      // Se acabou de fazer login (account existe), podemos guardar informações extras
-      if (account) {
-        token.accessToken = account.access_token;
       }
       return token;
     },
-    async session({ session }) {
+    async session({ session, token }) {
+      if (token?.accessToken) {
+        session.accessToken = token.accessToken as string;
+      }
+      if (token?.sub) {
+        session.user.id = token.sub;
+      }
       return session;
     },
   },

@@ -95,6 +95,18 @@ export class McpAuthService {
     };
   }
 
+  generateWebToken(userId: string) {
+    const access_token = jwt.sign({ sub: userId }, this.jwtSecret, {
+      expiresIn: '7d', // 7 days for web sessions
+    });
+
+    return {
+      access_token,
+      token_type: 'Bearer',
+      expires_in: 7 * 24 * 3600,
+    };
+  }
+
   verifyToken(token: string) {
     return jwt.verify(token, this.jwtSecret);
   }

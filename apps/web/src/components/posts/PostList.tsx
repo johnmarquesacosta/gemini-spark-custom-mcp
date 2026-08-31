@@ -1,7 +1,6 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Edit2, ExternalLink } from "lucide-react";
+import { api } from "../../lib/api";
 
 interface Post {
   id: string;
@@ -11,33 +10,19 @@ interface Post {
   publishedAt?: string;
 }
 
-export function PostList() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export async function PostList() {
+  let posts: Post[] = [];
 
-  useEffect(() => {
-    fetch("http://localhost:3001/posts")
-      .then((res) => {
-        if (!res.ok) throw new Error("API failed");
-        return res.json();
-      })
-      .then((data) => {
-        setPosts(data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        // Fallback for visual design testing
-        setPosts([
-          { id: "1", title: "The Future of AI in Publishing", slug: "future-of-ai-publishing", status: "PUBLISHED", publishedAt: "2026-08-29T10:00:00Z" },
-          { id: "2", title: "Typography on the Web: A Retrospective", slug: "typography-web", status: "DRAFT" },
-          { id: "3", title: "10 Frameworks You Should Ignore", slug: "10-frameworks-ignore", status: "ARCHIVED" },
-        ]);
-        setIsLoading(false);
-      });
-  }, []);
-
-  if (isLoading) {
-    return <div className="text-gray-500 font-medium">Loading articles...</div>;
+  try {
+    posts = await api.get("/posts");
+  } catch (error) {
+    console.error("Failed to fetch posts:", error);
+    return (
+      <div className="py-12 text-center text-red-500">
+        <p className="font-medium">Error loading articles.</p>
+        <p className="text-sm mt-1">Please try again later.</p>
+      </div>
+    );
   }
 
   if (posts.length === 0) {

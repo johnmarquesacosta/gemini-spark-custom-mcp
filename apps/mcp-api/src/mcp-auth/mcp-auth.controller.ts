@@ -19,13 +19,18 @@ import {
 import type { Response, Request } from 'express';
 import { McpAuthService } from './mcp-auth.service';
 import { SyncSecretGuard } from '../users/guards/sync-secret.guard';
+import { SyncUserDto } from '../users/dtos/sync-user.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('OAuth')
 @Controller()
 export class McpAuthController {
   private readonly logger = new Logger(McpAuthController.name);
 
-  constructor(private readonly auth: McpAuthService) {}
+  constructor(
+    private readonly auth: McpAuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Get('.well-known/oauth-protected-resource')
   @ApiOperation({
@@ -239,5 +244,24 @@ export class McpAuthController {
       );
       throw e;
     }
+  }
+
+  @Post('auth/sync')
+  @UseGuards(SyncSecretGuard)
+  @ApiOperation({
+    summary: 'Sync User from Frontend',
+    description:
+      'Receives user data from NextAuth, creates/updates the user, and returns a web session token.',
+  })
+  @ApiResponse({ status: 201, description: 'User synced successfully.' })
+  async syncUser(@Body() body: SyncUserDto) {
+    this.logger.log(`[auth/sync] Syncing user ${body.email}`);
+    const result = await this.usersService.syncUser(body);
+    const tokenData = this.auth.generateWebToken(result.user.id);
+    
+    return {
+      user: result.user,
+      accessToken: tokenData.access_token,
+    };
   }
 }
