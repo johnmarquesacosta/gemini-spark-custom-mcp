@@ -22,18 +22,23 @@ export class McpAuthService {
   private readonly jwtSecret =
     process.env.JWT_SECRET ?? 'poc-secret-troque-depois';
 
-  // DCR — aceita qualquer client que se registrar (RFC 7591 mínimo)
   registerClient(redirect_uris: string[], client_name?: string) {
     const client_id = randomUUID();
-    this.clients.set(client_id, { client_id, redirect_uris });
+    const client_secret = randomUUID();
+    this.clients.set(client_id, {
+      client_id,
+      redirect_uris,
+      client_secret,
+    } as any);
 
     return {
       client_id,
+      client_secret,
       client_id_issued_at: Math.floor(Date.now() / 1000),
       client_secret_expires_at: 0,
       redirect_uris,
       client_name,
-      token_endpoint_auth_method: 'none',
+      token_endpoint_auth_method: 'client_secret_post',
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
     };
