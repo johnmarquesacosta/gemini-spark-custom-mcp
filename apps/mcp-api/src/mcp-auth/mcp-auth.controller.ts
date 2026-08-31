@@ -258,7 +258,7 @@ export class McpAuthController {
     this.logger.log(`[auth/sync] Syncing user ${body.email}`);
     const result = await this.usersService.syncUser(body);
     const tokenData = this.auth.generateWebToken(result.user.id);
-    
+
     return {
       user: result.user,
       accessToken: tokenData.access_token,

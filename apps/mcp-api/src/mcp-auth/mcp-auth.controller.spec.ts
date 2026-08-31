@@ -2,10 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { McpAuthController } from './mcp-auth.controller';
 import { McpAuthService } from './mcp-auth.service';
 import { SyncSecretGuard } from '../users/guards/sync-secret.guard';
+import { UsersService } from '../users/users.service';
 
 describe('McpAuthController', () => {
   let controller: McpAuthController;
   let service: McpAuthService;
+  let usersService: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,6 +19,13 @@ describe('McpAuthController', () => {
             registerClient: jest.fn().mockReturnValue({ client_id: 'test' }),
             createAuthorizationCode: jest.fn().mockReturnValue('code123'),
             exchangeToken: jest.fn().mockReturnValue({ access_token: 'token' }),
+            generateWebToken: jest.fn().mockReturnValue({ access_token: 'web_token' }),
+          },
+        },
+        {
+          provide: UsersService,
+          useValue: {
+            syncUser: jest.fn(),
           },
         },
       ],
@@ -27,6 +36,7 @@ describe('McpAuthController', () => {
 
     controller = module.get<McpAuthController>(McpAuthController);
     service = module.get<McpAuthService>(McpAuthService);
+    usersService = module.get<UsersService>(UsersService);
   });
 
   it('should be defined', () => {

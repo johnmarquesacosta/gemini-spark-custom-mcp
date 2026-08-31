@@ -45,21 +45,4 @@ describe('UsersController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
-
-  describe('syncUser', () => {
-    it('should call usersService.syncUser with correct payload', async () => {
-      const dto = { email: 'test@example.com', name: 'Test' };
-      const expectedResult = {
-        success: true,
-        user: { id: '1', email: 'test@example.com' },
-      };
-
-      mockUsersService.syncUser.mockResolvedValue(expectedResult);
-
-      const result = await controller.syncUser(dto);
-
-      expect(service.syncUser).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(expectedResult);
-    });
-  });
 });

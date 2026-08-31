@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
@@ -26,13 +30,18 @@ export class CategoriesService {
     return category;
   }
 
-  async create(userId: string, createCategoryDto: CreateCategoryDto): Promise<Category> {
+  async create(
+    userId: string,
+    createCategoryDto: CreateCategoryDto,
+  ): Promise<Category> {
     const existing = await this.categoriesRepository.findOne({
       where: { slug: createCategoryDto.slug, userId },
     });
-    
+
     if (existing) {
-      throw new ConflictException(`Category with slug '${createCategoryDto.slug}' already exists`);
+      throw new ConflictException(
+        `Category with slug '${createCategoryDto.slug}' already exists`,
+      );
     }
 
     const category = this.categoriesRepository.create({
@@ -42,7 +51,11 @@ export class CategoriesService {
     return this.categoriesRepository.save(category);
   }
 
-  async update(id: string, userId: string, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+  async update(
+    id: string,
+    userId: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
     const category = await this.findOne(id, userId);
 
     if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
@@ -50,7 +63,9 @@ export class CategoriesService {
         where: { slug: updateCategoryDto.slug, userId },
       });
       if (existing) {
-        throw new ConflictException(`Category with slug '${updateCategoryDto.slug}' already exists`);
+        throw new ConflictException(
+          `Category with slug '${updateCategoryDto.slug}' already exists`,
+        );
       }
     }
 

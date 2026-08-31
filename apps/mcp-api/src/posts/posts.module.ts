@@ -20,10 +20,10 @@ import { McpAuthModule } from '../mcp-auth/mcp-auth.module';
   ],
   controllers: [PostsController, CategoriesController],
   providers: [
-    PostsService, 
-    PostsMcpHandler, 
-    CategoriesService, 
-    CategoriesMcpHandler
+    PostsService,
+    PostsMcpHandler,
+    CategoriesService,
+    CategoriesMcpHandler,
   ],
   exports: [PostsService, CategoriesService],
 })
