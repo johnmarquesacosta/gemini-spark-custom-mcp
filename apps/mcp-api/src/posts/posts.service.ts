@@ -131,9 +131,13 @@ export class PostsService {
       relations: {
         category: true,
         tags: true,
-        blocks: true,
+        blocks: {
+          generatedImage: true,
+          renderedGraph: true,
+        },
         sources: true,
       },
+      order: { blocks: { order: 'ASC' } },
     });
   }
 
@@ -143,9 +147,13 @@ export class PostsService {
       relations: {
         category: true,
         tags: true,
-        blocks: true,
+        blocks: {
+          generatedImage: true,
+          renderedGraph: true,
+        },
         sources: true,
       },
+      order: { blocks: { order: 'ASC' } },
     });
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
