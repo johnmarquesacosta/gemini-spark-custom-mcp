@@ -7,11 +7,17 @@ import {
   Length,
   MaxLength,
   IsUrl,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CreatePostBlockDto } from './create-post-block.dto';
 import { PostStatus } from '../enums/post-status.enum';
 import { ArticleSchemaType } from '../enums/article-schema-type.enum';
 
 export class CreatePostDto {
+  @IsUUID()
+  siteId: string;
+
   @IsString()
   @Length(2, 5)
   language: string;
@@ -27,12 +33,19 @@ export class CreatePostDto {
   @IsString()
   excerpt: string;
 
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePostBlockDto)
+  blocks?: CreatePostBlockDto[];
+
+  @IsOptional()
   @IsString()
-  content: string;
+  featuredImagePrompt?: string;
 
   @IsEnum(PostStatus)
-  // Permite apenas DRAFT ou READY_TO_REVIEW na criação (Publish é endpoint separado)
-  status: PostStatus = PostStatus.DRAFT;
+  // Permite apenas GENERATING na criação (Publish é endpoint separado)
+  status: PostStatus = PostStatus.GENERATING;
 
   @IsEnum(ArticleSchemaType)
   schemaType: ArticleSchemaType = ArticleSchemaType.BLOG_POSTING;

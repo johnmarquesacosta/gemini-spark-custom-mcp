@@ -1,237 +1,387 @@
-# SPEC — nestjs-mcp-api (Fase 1: Controle de Usuários + Autenticação de Agentes)
+# PRD — Sistema de Posts em Blocos (Texto / Imagem / Gráfico)
 
-## 1. Objetivo
+**Projeto:** Rede de blogs alimentados por IA
+**Repositório:** `gemini-spark-custom-mcp` (monorepo `apps/api` NestJS + `apps/web` Next.js)
+**Status:** Proposto
+**Autor:** John (com apoio de Claude)
 
-Construir, do zero, um monorepo contendo:
+---
 
-- Uma **API NestJS** que expõe rotas **MCP** (Model Context Protocol) via `@rekog/mcp-nest`.
-- Um **frontend Next.js** para gerenciar contas de usuário.
+## 1. Contexto
 
-O objetivo desta Fase 1 é deixar **pronto o controle de usuários** (cadastro, login, recuperação/troca de senha, refresh/access token) e um **mecanismo de autenticação de agentes de IA** (Gemini e Claude) que vão consumir as rotas MCP. Funcionalidades de negócio da API MCP em si (as tools/rotas que os agentes vão de fato chamar) ficam para uma fase posterior.
+O mecanismo atual de criação de posts (agente LLM → ferramenta MCP → WordPress via REST, sempre como rascunho) já está funcionando para texto puro. Dois problemas motivam esta mudança:
 
-## 2. Stack
+1. **Gráficos/diagramas:** a tentativa de usar Mermaid direto no WordPress não funciona — o editor do WP sanitiza `<script>`, então o código Mermaid nunca é renderizado no client. Hoje, quando o conteúdo precisa de um gráfico, o agente cai para arte ASCII em texto puro, que fica esteticamente ruim e não é responsiva.
+2. **Posicionamento de imagens:** o modelo atual assume no máximo uma imagem no corpo + uma thumbnail, mas o conteúdo real frequentemente pede múltiplas imagens em pontos específicos do texto, e hoje não existe uma forma estruturada de decidir *onde* cada imagem entra na montagem final.
 
-| Camada | Tecnologia |
-|---|---|
-| Monorepo | pnpm workspaces + Turborepo |
-| Backend | NestJS + TypeScript |
-| Banco de dados | PostgreSQL |
-| ORM | TypeORM |
-| Autenticação de usuário | JWT (access token) + refresh token persistido no banco |
-| E-mail transacional | Resend (recuperação de senha) |
-| MCP | `@rekog/mcp-nest` |
-| Frontend | Next.js (App Router) + TypeScript |
-| UI | shadcn/ui + Tailwind CSS |
-| Validação | class-validator / class-transformer (API) + zod (frontend) |
+Foi avaliado abandonar o WordPress em favor de um blog público em Next.js (já que a stack NestJS+Next.js existe), mas a decisão foi **manter o WordPress** — reconstruir SEO técnico, AdSense e o editor de revisão do zero custaria mais do que vale a pena neste momento.
 
-## 3. Estrutura do monorepo
+## 2. Objetivo
+
+Permitir que o agente LLM gere posts com uma **sequência arbitrária e ordenada de blocos** (texto, imagem, gráfico), onde cada bloco não-textual é renderizado/gerado de forma determinística e assíncrona, armazenado no MinIO, e só entra em contato com o WordPress no momento explícito de publish.
+
+## 3. Não-objetivos
+
+- Não inclui migrar a publicação para fora do WordPress.
+- Não inclui automatizar a publicação final (a regra de "nunca publica automaticamente, sempre rascunho manual" continua valendo).
+- Não inclui um editor de rich-text completo no painel admin — a edição é por bloco (texto, prompt de imagem, spec de gráfico), não um WYSIWYG geral.
+- Não inclui suporte a outros CMS além do WordPress nesta fase.
+
+## 4. Usuários
+
+Uso interno, um único operador (John) via painel de administração web (`apps/web`), que revisa e aprova cada post antes do envio ao WordPress.
+
+## 5. Visão geral do fluxo
+
+O pipeline de geração/renderização **nunca interage com o WordPress** — todo asset gerado vive no MinIO até o momento explícito de publish. O WP só entra na jogada quando o operador aciona "postar".
 
 ```
-nestjs-mcp-api/
-├── apps/
-│   ├── api/                      # NestJS
-│   │   └── src/
-│   │       ├── modules/
-│   │       │   ├── auth/         # login, refresh, logout
-│   │       │   ├── users/        # cadastro, perfil, troca de senha
-│   │       │   ├── password-reset/
-│   │       │   ├── agent-auth/   # autenticação dos agentes de IA (MCP)
-│   │       │   └── mcp/          # rotas MCP (placeholder nesta fase)
-│   │       ├── common/           # guards, decorators, filters, interceptors
-│   │       └── config/
-│   └── web/                       # Next.js
-│       └── src/
-│           ├── app/
-│           │   ├── (auth)/
-│           │   │   ├── login/
-│           │   │   ├── register/
-│           │   │   ├── forgot-password/
-│           │   │   └── reset-password/
-│           │   └── (dashboard)/
-│           │       ├── profile/
-│           │       └── settings/
-│           └── components/
-├── packages/
-│   ├── shared-types/               # DTOs/tipos compartilhados api <-> web
-│   └── config/                     # eslint, tsconfig base
-├── pnpm-workspace.yaml
-├── turbo.json
-├── tsconfig.base.json
-└── AGENTS.md
+LLM gera Post + PostBlock[] (ordem definida pelo LLM)
+        │
+        ├─ bloco TEXTO      → conteúdo já pronto, sem processamento
+        ├─ bloco IMAGEM     → cria GeneratedImage (prompt, status=PENDING)
+        └─ bloco GRAFICO    → cria RenderedGraph (engine + spec, status=PENDING)
+        │
+        ▼
+Worker assíncrono processa os PENDING — 100% in-process, sem CLI externo
+        ├─ RenderedGraph(engine=MERMAID) → Puppeteer embutido (provider Nest)  → SVG
+        ├─ RenderedGraph(engine=CHART)   → chartjs-node-canvas (in-process)    → PNG
+        └─ GeneratedImage                → automação de imagem existente
+        │
+        ▼
+Assets sobem para o MinIO (assetUrl); wpMediaId permanece NULL nesta etapa
+        │
+        ▼
+Post.status recalculado:
+        - algum bloco FAILED         → NEEDS_REVIEW (bloqueia publish)
+        - todos os blocos READY      → READY_TO_PUBLISH
+        │
+        ▼
+Painel admin: revisão, edição de blocos, re-render sob demanda (sempre contra o MinIO)
+        │
+        ▼
+Ação "postar" (manual) → status=PUBLISHING
+        ├─ baixa cada asset (featured image + blocos IMAGE/GRAPH) do MinIO
+        ├─ sobe cada um pra media library do WP → grava wpMediaId
+        ├─ monta HTML final na ordem dos blocos, usando as URLs do WP
+        └─ cria o post via WordPress REST API (sempre draft) → status=PUBLISHED
+              (falha em qualquer passo → status=PUBLISH_FAILED, MinIO intacto, pode retentar)
 ```
 
-## 4. Modelo de dados (TypeORM entities)
+## 6. Requisitos funcionais
 
-### 4.1 `User`
-| Campo | Tipo | Observações |
-|---|---|---|
-| id | uuid | PK |
-| email | string | unique, indexado |
-| passwordHash | string | bcrypt/argon2 |
-| name | string | |
-| emailVerifiedAt | timestamp \| null | |
-| createdAt / updatedAt | timestamp | |
+### 6.1 Geração de estrutura (agente/MCP)
+- RF01: A ferramenta MCP de criação de post deve aceitar uma lista ordenada de blocos, cada um com `type` (`text` | `image` | `graph`) e o payload correspondente.
+- RF02: Para blocos `image`, o payload é um `prompt` de texto (geração de imagem continua em fluxo separado da geração do texto, como já decidido).
+- RF03: Para blocos `graph`, o LLM define explicitamente o `engine` (`mermaid` para diagramas, `chart` para gráficos de dados como pizza/barra/linha) — sem inferência automática — mais a `spec` bruta (código Mermaid ou config de chart).
+- RF04: A imagem de destaque (thumbnail) é sempre gerada em um fluxo separado, fora da sequência de blocos, e associada ao post via relação 1:1.
+- RF05: A ordem dos blocos é explícita (campo `order`) e arbitrária — sem limite fixo de quantidade ou de tipos por post.
 
-### 4.2 `RefreshToken`
-| Campo | Tipo | Observações |
-|---|---|---|
-| id | uuid | PK |
-| userId | uuid | FK -> User |
-| tokenHash | string | nunca armazenar o token em texto puro |
-| revokedAt | timestamp \| null | suporte a logout / rotação |
-| expiresAt | timestamp | |
-| createdByIp / userAgent | string | opcional, auditoria |
-| createdAt | timestamp | |
+### 6.2 Renderização e geração de assets
+- RF06: Um worker/serviço deve processar blocos `graph` com `status=PENDING`, chamando o motor de renderização correspondente ao `engine`. **Este worker nunca interage com o WordPress.**
+- RF07: Diagramas (`engine=mermaid`) são renderizados in-process, via Puppeteer embutido como dependência da própria API NestJS (sem shell-exec de CLI externo, sem container/microserviço adicional) — mantendo uma instância de browser aquecida (singleton/pool) em vez de abrir um Chromium por render.
+- RF08: Gráficos de dados (`engine=chart`) são renderizados in-process via `chartjs-node-canvas` (binding nativo, sem browser, sem CLI, sem microserviço externo).
+- RF09: Blocos `image` com `status=PENDING` disparam a automação de geração de imagem já existente, usando o `prompt` do bloco.
+- RF10: Todo asset renderizado/gerado é enviado **exclusivamente para o MinIO** (`assetUrl` = URL no MinIO). `wpMediaId` permanece `NULL` nesta fase — nada é enviado ao WordPress até a ação de publish.
+- RF11: Falhas de renderização/geração marcam o bloco como `FAILED` com uma mensagem de erro persistida — sem retry automático e sem fallback com placeholder.
 
-### 4.3 `PasswordResetToken`
-| Campo | Tipo | Observações |
-|---|---|---|
-| id | uuid | PK |
-| userId | uuid | FK -> User |
-| tokenHash | string | token enviado por e-mail é hasheado no banco |
-| expiresAt | timestamp | ex: 30-60 min |
-| usedAt | timestamp \| null | token de uso único |
-| createdAt | timestamp | |
+### 6.3 Painel de administração (`apps/web`)
+- RF12: Deve ser possível visualizar um post com todos os seus blocos, na ordem, incluindo preview do asset renderizado (ou o erro, se `FAILED`).
+- RF13: Deve ser possível editar o conteúdo de um bloco: texto (`textContent`), prompt de imagem, ou spec de gráfico.
+- RF14: Ao salvar a edição de um bloco `image` ou `graph`, o sistema deve resetar seu `status` para `PENDING` e disparar o re-processamento automaticamente.
+- RF15: O painel deve exibir o status agregado do post (`generating` / `rendering` / `needs_review` / `ready` / `publishing` / `publish_failed` / `published`) e bloquear a ação de publicar enquanto houver blocos `FAILED`.
 
-### 4.4 `AiAgent`
-Representa uma credencial de agente de IA (Gemini, Claude) autorizada a chamar as rotas MCP.
+### 6.4 Publicação
+- RF16: A ação "postar" (manual, disparada pelo operador no painel) é o único ponto de todo o sistema que fala com o WordPress. Ela move `Post.status` para `PUBLISHING`.
+- RF17: Para cada asset do post (featured image + blocos `image`/`graph` já `READY`), o sistema baixa o arquivo do MinIO e sobe pra media library do WP via REST, persistindo o `wpMediaId` retornado (evita re-upload em retentativas).
+- RF18: A montagem do HTML final percorre os blocos em ordem: `text` vira parágrafo/HTML direto; `image` e `graph` viram `<figure><img></figure>` apontando para a URL do WP (não a do MinIO) — garante featured image nativa, `srcset` responsivo e backup padrão do WP no post final.
+- RF19: O envio do post ao WordPress continua usando o mecanismo REST já existente, sempre com `status=draft` — nenhuma alteração nessa regra.
+- RF20: Se qualquer etapa do publish falhar (upload de asset ou criação do post), `Post.status` vai para `PUBLISH_FAILED` com o erro persistido; os assets no MinIO permanecem intactos e a ação pode ser retentada sem reprocessar geração/renderização.
+- RF21: Após publish bem-sucedido, `wordpressPostId` é persistido no `Post` e `status` muda para `PUBLISHED`.
 
-| Campo | Tipo | Observações |
-|---|---|---|
-| id | uuid | PK |
-| name | string | ex: "claude-code-prod", "gemini-agent-1" |
-| apiKeyHash | string | a chave em texto puro só é exibida uma vez, na criação |
-| ownerId | uuid | FK -> User (dono/criador da credencial) |
-| scopes | string[] | permissões/tools que o agente pode acessar |
-| lastUsedAt | timestamp \| null | |
-| revokedAt | timestamp \| null | |
-| createdAt | timestamp | |
+## 7. Requisitos não-funcionais
 
-## 5. Fluxos de autenticação de usuário
+- RNF01: O motor de automação deve continuar agnóstico de nicho/idioma (parametrizado por site), conforme decisão já tomada para a rede de blogs.
+- RNF02: Renderização de gráficos deve produzir assets responsivos (SVG preferencialmente para diagramas) — sem largura fixa tipo ASCII art.
+- RNF03: A renderização (Puppeteer/chartjs-node-canvas) deve ficar isolada num módulo próprio dentro da API, para permitir extrair pra um worker separado no futuro sem mudar a interface caso vire gargalo de recursos.
+- RNF04: Toda a modelagem deve suportar múltiplos sites/tenants (campo `siteId` em `Post`).
 
-### 5.1 Cadastro (`POST /auth/register`)
-- Recebe `email`, `password`, `name`.
-- Valida força de senha (mínimo 8 caracteres, 1 número, 1 letra maiúscula).
-- Verifica e-mail único.
-- Hash da senha (argon2 recomendado, bcrypt aceitável).
-- Cria `User`.
-- (Opcional nesta fase, mas recomendado) Envia e-mail de verificação via Resend.
-- Retorna dados básicos do usuário (sem token — login é separado).
+## 8. Modelo de dados
 
-### 5.2 Login (`POST /auth/login`)
-- Recebe `email`, `password`.
-- Valida credenciais.
-- Gera:
-  - **Access token** (JWT, curta duração — ex: 15 min), contendo `sub` (userId) e claims mínimas.
-  - **Refresh token** (string aleatória opaca, longa duração — ex: 7-30 dias), persistido hasheado em `RefreshToken`.
-- Retorna access token no corpo da resposta e refresh token em **cookie httpOnly, secure, sameSite=strict**.
+```typescript
+// ============================================================================
+// Modelagem: sistema de posts em blocos (TEXTO / IMAGEM / GRAFICO)
+// ----------------------------------------------------------------------------
+// Ideia central: IMAGEM e GRAFICO compartilham o mesmo ciclo de vida —
+//   spec/prompt (input) -> render/geração assíncrona -> asset final (output)
+//   -> pode falhar -> editável no admin -> re-render ao salvar.
+// Por isso ambos usam entidades separadas e reutilizáveis (GeneratedImage,
+// RenderedGraph), em vez de campos soltos dentro de PostBlock.
+// A thumbnail (featured image) usa a MESMA GeneratedImage, mas fora da
+// sequência de blocos — é um relacionamento 1:1 direto no Post.
+//
+// Armazenamento: TODO asset gerado/renderizado vai pro MinIO primeiro
+// (assetUrl = URL no MinIO). O pipeline de geração/renderização NUNCA
+// interage com o WordPress. Só na ação de publish ("postar") o sistema
+// baixa cada asset do MinIO e sobe pra media library do WP (populando
+// wpMediaId), garantindo featured image nativa, srcset responsivo e
+// backup padrão do WP no post final.
+// ============================================================================
 
-### 5.3 Refresh (`POST /auth/refresh`)
-- Lê o refresh token do cookie httpOnly.
-- Valida hash contra `RefreshToken` (existe, não expirado, não revogado).
-- Implementa **rotação de refresh token**: revoga o token usado e emite um novo (mitiga replay de token roubado).
-- Emite novo access token.
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToOne,
+  OneToMany,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
-### 5.4 Logout (`POST /auth/logout`)
-- Revoga o refresh token atual (`revokedAt`).
-- Limpa o cookie.
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
 
-### 5.5 Esqueci minha senha (`POST /auth/forgot-password`)
-- Recebe `email`.
-- Se o e-mail existir, gera `PasswordResetToken` (token aleatório, hash salvo no banco) e envia e-mail via Resend com link `web/reset-password?token=...`.
-- Resposta **sempre genérica** ("se o e-mail existir, você receberá instruções"), para não vazar quais e-mails estão cadastrados.
+export enum PostBlockType {
+  TEXT = 'text',
+  IMAGE = 'image',
+  GRAPH = 'graph',
+}
 
-### 5.6 Redefinir senha (`POST /auth/reset-password`)
-- Recebe `token`, `newPassword`.
-- Valida token (existe, não expirado, não usado).
-- Atualiza `passwordHash` do usuário.
-- Marca token como usado.
-- Revoga **todos** os refresh tokens ativos do usuário (força novo login em todos os dispositivos).
+export enum GraphEngine {
+  MERMAID = 'mermaid', // diagramas: fluxograma, arquitetura, timeline — renderizado via Puppeteer in-process
+  CHART = 'chart',     // gráficos de dados: pizza, barra, linha — renderizado via chartjs-node-canvas in-process
+}
 
-### 5.7 Trocar senha (autenticado) (`POST /auth/change-password`)
-- Requer access token válido.
-- Recebe `currentPassword`, `newPassword`.
-- Valida senha atual.
-- Atualiza hash.
-- Revoga refresh tokens ativos (exceto, opcionalmente, a sessão atual).
+// Status compartilhado por GeneratedImage e RenderedGraph.
+// PENDING     -> acabou de ser criado pelo LLM, aguardando processamento
+// PROCESSING  -> worker pegou o job e está gerando/renderizando
+// READY       -> asset final disponível no MinIO (assetUrl preenchido)
+// FAILED      -> falhou; errorMessage preenchido; fica visível no admin
+export enum AssetStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  READY = 'ready',
+  FAILED = 'failed',
+}
 
-## 6. Autenticação de agentes de IA (MCP)
+// Status do Post como um todo — deriva do status agregado dos blocos,
+// mas é persistido para não recalcular toda hora.
+export enum PostStatus {
+  GENERATING = 'generating',           // LLM ainda gerando estrutura/blocos
+  RENDERING = 'rendering',             // blocos sendo processados (imagens/gráficos) — tudo no MinIO
+  NEEDS_REVIEW = 'needs_review',       // pelo menos 1 bloco em FAILED — precisa de ação no admin
+  READY_TO_PUBLISH = 'ready',          // todos os blocos + thumbnail estão READY no MinIO
+  PUBLISHING = 'publishing',           // ação "postar" disparada: subindo assets MinIO -> WP media + criando o post
+  PUBLISH_FAILED = 'publish_failed',   // falhou ao subir pro WP (ex: WP fora do ar) — asset no MinIO continua intacto, pode tentar de novo
+  PUBLISHED = 'published',             // post criado no WP como rascunho, todos os assets já na media library
+}
 
-Agentes (Gemini, Claude) não usam o fluxo de login de usuário — usam uma **API key** dedicada.
+// ---------------------------------------------------------------------------
+// GeneratedImage — usado tanto pela thumbnail (Post.featuredImage)
+// quanto por blocos do tipo IMAGE (PostBlock.generatedImage)
+// ---------------------------------------------------------------------------
 
-### 6.1 Criação de credencial (`POST /agents`, autenticado como usuário)
-- Usuário autenticado cria um `AiAgent` informando `name` e `scopes`.
-- Sistema gera uma API key (ex: prefixo `mcp_live_` + string aleatória), retorna **em texto puro apenas nesta resposta** e salva só o hash (`apiKeyHash`) no banco.
+@Entity('generated_images')
+export class GeneratedImage {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-### 6.2 Autenticação nas rotas MCP
-- As rotas MCP exigem header `Authorization: Bearer <api_key>` (formato distinto do JWT de usuário).
-- Guard dedicado (`AgentAuthGuard`):
-  - Extrai a key do header.
-  - Compara hash contra `AiAgent.apiKeyHash`.
-  - Verifica `revokedAt` e (se aplicável) `scopes` compatíveis com a rota chamada.
-  - Atualiza `lastUsedAt`.
-- Rejeitar com `401` se inválida/revogada.
+  // Prompt gerado pelo LLM (fluxo de geração de imagem, já separado do texto)
+  @Column('text')
+  prompt: string;
 
-### 6.3 Revogação (`DELETE /agents/:id`)
-- Usuário autenticado revoga a credencial (`revokedAt = now()`), invalidando o acesso do agente imediatamente.
+  @Column({ type: 'enum', enum: AssetStatus, default: AssetStatus.PENDING })
+  status: AssetStatus;
 
-### 6.4 Listagem (`GET /agents`)
-- Lista as credenciais do usuário autenticado (sem expor a key, apenas metadados: nome, scopes, criada em, último uso).
+  // URL final do asset já hospedado no MinIO (source of truth da geração —
+  // o worker de geração de imagem nunca fala com o WP)
+  @Column({ type: 'text', nullable: true })
+  assetUrl: string | null;
 
-## 7. Frontend (Next.js)
+  // ID do media item no WordPress. Fica NULL durante toda a geração/edição.
+  // Só é preenchido no momento do publish, quando o sistema baixa o asset
+  // do MinIO e sobe pra media library do WP. Cacheado aqui pra não re-subir
+  // em republish/retry.
+  @Column({ type: 'int', nullable: true })
+  wpMediaId: number | null;
 
-Páginas necessárias:
+  @Column({ type: 'text', nullable: true })
+  errorMessage: string | null;
 
-- `/login` — formulário de login.
-- `/register` — formulário de cadastro.
-- `/forgot-password` — formulário para solicitar recuperação.
-- `/reset-password?token=...` — formulário de nova senha.
-- `/profile` (autenticado) — dados do usuário + troca de senha.
-- `/settings/agents` (autenticado) — CRUD de credenciais de agentes de IA (criar, listar, revogar). A API key gerada deve ser exibida uma única vez com aviso claro de que não poderá ser vista novamente.
+  @Column({ type: 'timestamptz', nullable: true })
+  generatedAt: Date | null;
 
-Requisitos técnicos:
-- Access token mantido em memória (store client-side, ex: contexto React/zustand) — **não** em localStorage.
-- Refresh token via cookie httpOnly (o frontend nunca manipula esse valor diretamente).
-- Interceptor de requisições que tenta `refresh` automaticamente ao receber `401`.
-- Formulários validados com `zod` + `react-hook-form`.
-- Componentes de formulário via `shadcn/ui`.
+  @CreateDateColumn()
+  createdAt: Date;
 
-## 8. Segurança — requisitos obrigatórios
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
 
-- Hash de senha com argon2 (ou bcrypt com custo ≥ 12).
-- Rate limiting nas rotas `/auth/login`, `/auth/forgot-password`, `/auth/register` (ex: `@nestjs/throttler`).
-- Todos os tokens (refresh, reset de senha, API key de agente) armazenados **hasheados** no banco — nunca em texto puro.
-- Resposta genérica em `forgot-password` (não confirmar existência de e-mail).
-- CORS restrito ao domínio do frontend.
-- Variáveis sensíveis (JWT secret, Resend API key, DB credentials) via `.env`, nunca commitadas.
-- Rotação de refresh token a cada uso.
+// ---------------------------------------------------------------------------
+// RenderedGraph — usado por blocos do tipo GRAPH
+// ---------------------------------------------------------------------------
 
-## 9. Fora de escopo (Fase 1)
+@Entity('rendered_graphs')
+export class RenderedGraph {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-- Login social (Google/GitHub OAuth).
-- Autenticação multifator (2FA).
-- As tools/rotas de negócio do MCP em si (apenas a autenticação de agente está nesta fase).
-- Painel administrativo multi-tenant.
-- Verificação obrigatória de e-mail bloqueando login (pode ficar como TODO).
+  // Definido explicitamente pelo LLM — sem inferência automática
+  @Column({ type: 'enum', enum: GraphEngine })
+  engine: GraphEngine;
 
-## 10. Etapas de implementação
+  // Spec bruta gerada pelo LLM (código Mermaid, ou config JSON do Chart).
+  // É o "source of truth" editável no admin — ao editar, dispara re-render.
+  @Column('text')
+  spec: string;
 
-1. **Setup do monorepo**: pnpm workspaces + Turborepo, `apps/api` (Nest CLI) e `apps/web` (Next.js), `packages/shared-types`.
-2. **Infra da API**: conexão TypeORM + PostgreSQL, configuração de ambiente (`.env`, `ConfigModule`), estrutura de módulos.
-3. **Módulo `users`**: entidade `User`, endpoint de cadastro, hash de senha.
-4. **Módulo `auth`**: login, geração de access/refresh token, guard JWT, endpoint de refresh (com rotação) e logout.
-5. **Módulo `password-reset`**: entidade `PasswordResetToken`, integração com Resend, endpoints forgot/reset password, endpoint change-password (autenticado).
-6. **Módulo `agent-auth`**: entidade `AiAgent`, endpoints de criação/listagem/revogação de credenciais, `AgentAuthGuard` para proteger rotas MCP.
-7. **Frontend — autenticação**: páginas de login/registro/forgot/reset password, gerenciamento de access token em memória + refresh automático.
-8. **Frontend — perfil e agentes**: página de perfil (troca de senha) e página de gerenciamento de credenciais de agentes de IA.
-9. **Testes**: cobertura dos fluxos críticos (login, refresh com rotação, reset de senha, guard de agente) — seguindo TDD conforme o skill `solid` já usado no projeto.
-10. **Revisão de segurança**: checklist da seção 8 antes de considerar a fase concluída.
+  @Column({ type: 'enum', enum: AssetStatus, default: AssetStatus.PENDING })
+  status: AssetStatus;
 
-## 11. Critério de conclusão da Fase 1
+  @Column({ type: 'text', nullable: true })
+  assetUrl: string | null; // SVG (mermaid) ou PNG (chart) hospedado no MinIO
 
-- Um usuário consegue se cadastrar, logar, recuperar senha esquecida, trocar senha autenticado, e permanecer logado via refresh token com rotação, tudo pelo frontend Next.js.
-- Um usuário autenticado consegue gerar uma API key, e essa key autentica corretamente uma chamada às rotas MCP (mesmo que as rotas MCP ainda não façam nada de útil nesta fase — o guard já bloqueia/libera corretamente).
-- Uma credencial revogada deixa de funcionar imediatamente.
-## Gemini Spark Integration
-- **Callback Redirect URI**: `https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-100027770923717185730-automobiles-translate-hearts-models_trycloudflare_com`
+  // Preenchido só no publish (upload MinIO -> WP media library), igual
+  // GeneratedImage.wpMediaId — nunca durante a renderização em si.
+  @Column({ type: 'int', nullable: true })
+  wpMediaId: number | null;
 
+  @Column({ type: 'text', nullable: true })
+  errorMessage: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  renderedAt: Date | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// PostBlock — unidade da sequência ordenada (TEXTO | IMAGEM | GRAFICO)
+// ---------------------------------------------------------------------------
+
+@Entity('post_blocks')
+@Index(['postId', 'order'])
+export class PostBlock {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('uuid')
+  postId: string;
+
+  @ManyToOne(() => Post, (post) => post.blocks, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'postId' })
+  post: Post;
+
+  // Posição do bloco dentro do post — define a ordem de montagem final
+  @Column('int')
+  order: number;
+
+  @Column({ type: 'enum', enum: PostBlockType })
+  type: PostBlockType;
+
+  // Preenchido só quando type = TEXT. Markdown ou HTML já pronto do LLM —
+  // não precisa de processamento assíncrono, então não tem "status" próprio.
+  @Column({ type: 'text', nullable: true })
+  textContent: string | null;
+
+  // Preenchido só quando type = IMAGE
+  @Column({ type: 'uuid', nullable: true })
+  generatedImageId: string | null;
+
+  @OneToOne(() => GeneratedImage, { nullable: true, cascade: true, eager: true })
+  @JoinColumn({ name: 'generatedImageId' })
+  generatedImage: GeneratedImage | null;
+
+  // Preenchido só quando type = GRAPH
+  @Column({ type: 'uuid', nullable: true })
+  renderedGraphId: string | null;
+
+  @OneToOne(() => RenderedGraph, { nullable: true, cascade: true, eager: true })
+  @JoinColumn({ name: 'renderedGraphId' })
+  renderedGraph: RenderedGraph | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Post
+// ---------------------------------------------------------------------------
+
+@Entity('posts')
+export class Post {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  // Multi-tenant: qual site/blog da rede este post pertence
+  @Column('uuid')
+  siteId: string;
+
+  @Column()
+  title: string;
+
+  @Column({ unique: true })
+  slug: string;
+
+  @Column()
+  language: string; // ex: 'pt-BR', 'en-US'
+
+  @Column({ type: 'enum', enum: PostStatus, default: PostStatus.GENERATING })
+  status: PostStatus;
+
+  // Thumbnail — sempre gerada separadamente, fora da sequência de blocos
+  @Column({ type: 'uuid', nullable: true })
+  featuredImageId: string | null;
+
+  @OneToOne(() => GeneratedImage, { nullable: true, cascade: true, eager: true })
+  @JoinColumn({ name: 'featuredImageId' })
+  featuredImage: GeneratedImage | null;
+
+  @OneToMany(() => PostBlock, (block) => block.post, { cascade: true })
+  blocks: PostBlock[];
+
+  // Preenchido após o publish bem-sucedido no WordPress
+  @Column({ type: 'int', nullable: true })
+  wordpressPostId: number | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+```
+
+## 9. Máquina de estados
+
+**`AssetStatus`** (`GeneratedImage`, `RenderedGraph`): `PENDING → PROCESSING → READY | FAILED`. De `FAILED`, uma edição salva no admin volta o status para `PENDING`. Todo o ciclo acontece contra o MinIO — nunca toca o WP.
+
+**`PostStatus`**: `GENERATING → RENDERING → (NEEDS_REVIEW | READY_TO_PUBLISH) → PUBLISHING → (PUBLISH_FAILED | PUBLISHED)`. `NEEDS_REVIEW` é reavaliado a cada mudança de status de um bloco filho; some assim que o último bloco `FAILED` for corrigido e voltar a `READY`. `PUBLISHING`/`PUBLISH_FAILED` isolam a etapa de upload-pro-WP como uma operação própria, que pode ser retentada sem repetir geração — de `PUBLISH_FAILED`, o operador pode simplesmente clicar "postar" de novo.
+
+## 10. Fora de escopo / riscos conhecidos
+
+- Puppeteer embutido na API traz Chromium como dependência (~300MB, uso de memória por render) — validar footprint/latência e considerar mover pra um worker/processo isolado se virar gargalo (sem mudar a interface externa).
+- `chartjs-node-canvas` depende de bindings nativos de `canvas` — validar build/compatibilidade no ambiente de deploy (Docker) antes de produção.
+- Sem versionamento de asset (re-render sobrescreve `assetUrl`/`wpMediaId` anterior) — se precisar de histórico, é uma extensão futura.
+- Se o WP estiver fora do ar no momento do publish, o post fica em `PUBLISH_FAILED` indefinidamente até nova tentativa manual — sem retry automático nesta fase.
+
+## 11. Critérios de aceite (MVP)
+
+- [ ] Um post com blocos `text`, `image` e `graph` (ambos engines) é gerado e processado até `READY_TO_PUBLISH` sem qualquer chamada ao WordPress durante o processo.
+- [ ] Um bloco `graph` com spec inválida cai em `FAILED` com mensagem de erro visível no admin, sem afetar o MinIO dos demais blocos.
+- [ ] Editar e salvar a spec de um bloco `FAILED` no admin dispara novo render (contra o MinIO) e, em caso de sucesso, o post sai de `NEEDS_REVIEW`.
+- [ ] Acionar "postar" sobe todos os assets do MinIO pra media library do WP, cria o post como rascunho preservando a ordem exata dos blocos, e usa a thumbnail correta como featured image nativa.
+- [ ] Uma falha durante o publish (ex: WP indisponível) deixa o post em `PUBLISH_FAILED` sem perder nenhum asset do MinIO, e uma nova tentativa de "postar" reaproveita o que já foi enviado (sem re-upload de assets já com `wpMediaId`).
+- [ ] Nenhum post é publicado automaticamente — o botão "postar" é sempre uma ação manual no admin.

@@ -8,6 +8,9 @@ import { Repository, In } from 'typeorm';
 import { Post } from './entities/post.entity';
 import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
+import { PostBlock } from './entities/post-block.entity';
+import { GeneratedImage } from './entities/generated-image.entity';
+import { RenderedGraph } from './entities/rendered-graph.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostStatus } from './enums/post-status.enum';
@@ -23,11 +26,21 @@ export class PostsService {
     private tagsRepository: Repository<Tag>,
   ) {}
 
-  private calculateMetrics(content: string) {
-    if (!content) return { wordCount: 0, readingTimeMinutes: 0 };
-    // Basic word count splitting by whitespace
-    const wordCount = content.trim().split(/\s+/).length;
-    // Average reading speed ~200 words per minute
+  private calculateMetrics(blocks?: { type: string; textContent?: string }[]) {
+    if (!blocks || blocks.length === 0)
+      return { wordCount: 0, readingTimeMinutes: 0 };
+
+    let totalText = '';
+    for (const block of blocks) {
+      if (block.type === 'text' && block.textContent) {
+        totalText += block.textContent + ' ';
+      }
+    }
+
+    const wordCount = totalText
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0).length;
     const readingTimeMinutes = Math.ceil(wordCount / 200);
     return { wordCount, readingTimeMinutes };
   }
@@ -48,9 +61,12 @@ export class PostsService {
     }
 
     const { wordCount, readingTimeMinutes } = this.calculateMetrics(
-      postData.content,
+      postData.blocks,
     );
 
+    // Simplificação temporária: na API, apenas persistimos os blocos enviados no DTO
+    // O DTO e a entidade lidam com cascata se configurados.
+    // Em implementações reais, geramos `GeneratedImage` e `RenderedGraph` instâncias aqui se for Deep Save
     const post = this.postsRepository.create({
       ...postData,
       userId,
@@ -69,7 +85,8 @@ export class PostsService {
       relations: {
         category: true,
         tags: true,
-        images: true,
+        blocks: true,
+        featuredImage: true,
         sources: true,
       },
     });
@@ -81,7 +98,8 @@ export class PostsService {
       relations: {
         category: true,
         tags: true,
-        images: true,
+        blocks: true,
+        featuredImage: true,
         sources: true,
       },
     });
@@ -115,9 +133,9 @@ export class PostsService {
 
     Object.assign(post, postData);
 
-    if (postData.content !== undefined) {
+    if (postData.blocks !== undefined) {
       const { wordCount, readingTimeMinutes } = this.calculateMetrics(
-        postData.content,
+        postData.blocks,
       );
       post.wordCount = wordCount;
       post.readingTimeMinutes = readingTimeMinutes;

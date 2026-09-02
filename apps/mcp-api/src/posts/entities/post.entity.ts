@@ -7,12 +7,16 @@ import {
   ManyToOne,
   OneToMany,
   ManyToMany,
+  OneToOne,
   JoinTable,
+  JoinColumn,
   Index,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { PostStatus } from '../enums/post-status.enum';
 import { ArticleSchemaType } from '../enums/article-schema-type.enum';
-import { PostImage } from './post-image.entity';
+import type { PostBlock } from './post-block.entity';
+import { GeneratedImage } from './generated-image.entity';
 import { PostSource } from './post-source.entity';
 import { Category } from './category.entity';
 import { Tag } from './tag.entity';
@@ -27,6 +31,9 @@ export class Post {
   // --- Multi-tenant / multi-idioma ---
   @Column()
   userId: string;
+
+  @Column('uuid')
+  siteId: string;
 
   // @ManyToOne(() => Site, { nullable: false })
   // site: Site;
@@ -44,10 +51,7 @@ export class Post {
   @Column({ type: 'text' })
   excerpt: string; // resumo/dek — usado como fallback de metaDescription/og:description se não houver override
 
-  @Column({ type: 'text' })
-  content: string; // corpo em HTML (ou Markdown, se o front processar) já pronto pra ir pro WordPress
-
-  @Column({ type: 'enum', enum: PostStatus, default: PostStatus.DRAFT })
+  @Column({ type: 'enum', enum: PostStatus, default: PostStatus.GENERATING })
   status: PostStatus;
 
   @Column({
@@ -111,8 +115,19 @@ export class Post {
   tags: Tag[];
 
   // --- Relacionamentos ---
-  @OneToMany(() => PostImage, (image) => image.post, { cascade: true })
-  images: PostImage[];
+  @Column({ type: 'uuid', nullable: true })
+  featuredImageId: string | null;
+
+  @OneToOne(() => GeneratedImage, {
+    nullable: true,
+    cascade: true,
+    eager: true,
+  })
+  @JoinColumn({ name: 'featuredImageId' })
+  featuredImage: GeneratedImage | null;
+
+  @OneToMany('PostBlock', (block: PostBlock) => block.post, { cascade: true })
+  blocks: Relation<PostBlock>[];
 
   @OneToMany(() => PostSource, (source) => source.post, { cascade: true })
   sources: PostSource[];
