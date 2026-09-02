@@ -6,6 +6,8 @@ allowBuilds:
   '@scarf/scarf': true
   unrs-resolver: true
   '@swc/core': true
+  canvas: true
+  puppeteer: true
 minimumReleaseAgeExclude:
   - '@jest/console@30.5.0'
   - '@jest/core@30.5.0'

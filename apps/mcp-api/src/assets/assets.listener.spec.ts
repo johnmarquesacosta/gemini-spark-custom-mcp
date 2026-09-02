@@ -6,12 +6,13 @@ import { PostBlock } from '../posts/entities/post-block.entity';
 import { GraphRendererService } from './graph-renderer.service';
 import { MinioService } from './minio.service';
 import { AssetStatus } from '../posts/enums/asset-status.enum';
+import { Repository } from 'typeorm';
 
 describe('AssetsListener', () => {
   let listener: AssetsListener;
-  let renderedGraphRepo: any;
-  let graphRenderer: any;
-  let minioService: any;
+  let renderedGraphRepo: jest.Mocked<Partial<Repository<RenderedGraph>>>;
+  let graphRenderer: jest.Mocked<Partial<GraphRendererService>>;
+  let minioService: jest.Mocked<Partial<MinioService>>;
 
   beforeEach(async () => {
     renderedGraphRepo = {

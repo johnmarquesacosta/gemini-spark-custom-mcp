@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPost, updatePost, publishPost } from "../../app/actions/posts";
 import { Save, Send } from "lucide-react";
 import { PageHeader } from "../layout/PageHeader";
+import { BlockEditor, PostBlockData } from "./BlockEditor";
 
 export interface Category {
   id: string;
@@ -17,7 +18,7 @@ export interface Post {
   title: string;
   slug: string;
   excerpt?: string;
-  content?: string;
+  blocks?: PostBlockData[];
   categoryId?: string;
   category?: Category;
   status?: string;
@@ -38,6 +39,7 @@ export function PostEditor({ post, categories }: { post?: Post; categories: Cate
 
   const [title, setTitle] = useState(post?.title || "");
   const [slug, setSlug] = useState(post?.slug || "");
+  const [blocks, setBlocks] = useState<PostBlockData[]>(post?.blocks || []);
 
   // Optional: Auto-generate slug from title
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,7 +63,7 @@ export function PostEditor({ post, categories }: { post?: Post; categories: Cate
         slug,
         language: formData.get("language") as string,
         excerpt: formData.get("excerpt") as string,
-        content: formData.get("content") as string,
+        blocks: blocks.map((b, i) => ({ ...b, order: i })),
         categoryId: formData.get("categoryId") as string,
         schemaType: "BlogPosting", // Default
         metaTitle: formData.get("metaTitle") as string,
@@ -174,15 +176,8 @@ export function PostEditor({ post, categories }: { post?: Post; categories: Cate
           </div>
 
           <div>
-            <label htmlFor="content" className="sr-only">Content</label>
-            <textarea
-              id="content"
-              name="content"
-              placeholder="Start writing the story..."
-              defaultValue={post?.content}
-              required
-              className="w-full min-h-[500px] text-lg leading-relaxed text-gray-800 placeholder:text-gray-300 focus:outline-none bg-transparent resize-y"
-            />
+            <label className="sr-only">Content Blocks</label>
+            <BlockEditor blocks={blocks} onChange={setBlocks} />
           </div>
         </div>
 

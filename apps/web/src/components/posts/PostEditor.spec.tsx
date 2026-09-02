@@ -35,7 +35,7 @@ describe("PostEditor", () => {
       id: "p1",
       title: "My Post",
       slug: "my-post",
-      content: "Content here",
+      blocks: [{ id: "b1", type: "TEXT", textContent: "Content here", order: 0 }],
       excerpt: "Excerpt",
       status: "DRAFT",
       metaTitle: "Meta",
@@ -60,7 +60,9 @@ describe("PostEditor", () => {
     fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "c1" } });
     
     // Simulate content, excerpt, and meta fields...
-    fireEvent.change(screen.getByLabelText(/Content/i), { target: { value: "Post content here" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Text/i }));
+    fireEvent.change(screen.getByPlaceholderText(/Write your content here/i), { target: { value: "Post content here" } });
+
     fireEvent.change(screen.getByLabelText(/Excerpt/i), { target: { value: "Short excerpt" } });
     fireEvent.change(screen.getByLabelText(/Meta Title/i), { target: { value: "A Meta title that is long enough" } });
     fireEvent.change(screen.getByLabelText(/Meta Description/i), { target: { value: "A Meta description that is long enough to pass validation rules easily" } });

@@ -1,6 +1,5 @@
 import { Post } from './post.entity';
 import { PostBlock } from './post-block.entity';
-import { GeneratedImage } from './generated-image.entity';
 import { PostStatus } from '../enums/post-status.enum';
 
 describe('Post Entity (TDD)', () => {
@@ -21,22 +20,5 @@ describe('Post Entity (TDD)', () => {
 
     expect(post.blocks).toHaveLength(1);
     expect(post.blocks[0].order).toBe(1);
-  });
-
-  it('should hold a reference to a featuredImage', () => {
-    const post = new Post();
-    const image = new GeneratedImage();
-    image.prompt = 'Test prompt';
-
-    post.featuredImage = image;
-
-    expect(post.featuredImage).toBeDefined();
-    expect(post.featuredImage?.prompt).toBe('Test prompt');
-  });
-
-  it('should have a siteId property', () => {
-    const post = new Post();
-    post.siteId = 'site-123';
-    expect(post.siteId).toBe('site-123');
   });
 });

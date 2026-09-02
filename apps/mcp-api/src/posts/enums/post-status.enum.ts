@@ -7,4 +7,5 @@ export enum PostStatus {
   PUBLISH_FAILED = 'publish_failed', // falhou ao subir pro WP (ex: WP fora do ar) — asset no MinIO continua intacto, pode tentar de novo
   PUBLISHED = 'published', // post criado no WP como rascunho, todos os assets já na media library
   ARCHIVED = 'archived', // mantendo apenas caso exista uso legado/arquivamento futuro
+  DRAFT = 'draft', // [LEGADO] Status mantido para não quebrar o synchronize com dados antigos do banco
 }

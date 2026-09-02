@@ -15,6 +15,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostStatus } from './enums/post-status.enum';
 import { PostBlockType } from './enums/post-block-type.enum';
+import { CreatePostBlockDto } from './dto/create-post-block.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GraphRequestedEvent } from '../assets/assets.listener';
 
@@ -49,7 +50,9 @@ export class PostsService {
     return { wordCount, readingTimeMinutes };
   }
 
-  private processBlocks(blocksDto?: any[]): PostBlock[] | undefined {
+  private processBlocks(
+    blocksDto?: CreatePostBlockDto[],
+  ): PostBlock[] | undefined {
     if (!blocksDto) return undefined;
     return blocksDto.map((block) => {
       const newBlock = new PostBlock();
@@ -129,7 +132,6 @@ export class PostsService {
         category: true,
         tags: true,
         blocks: true,
-        featuredImage: true,
         sources: true,
       },
     });
@@ -142,7 +144,6 @@ export class PostsService {
         category: true,
         tags: true,
         blocks: true,
-        featuredImage: true,
         sources: true,
       },
     });

@@ -1,0 +1,18 @@
+# Base image para otimização de build no monorepo
+FROM node:22-alpine AS base
+
+# Configuração do pnpm (mesma versão usada no repositório)
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
+
+# Dependências pesadas do sistema (usadas pela API para node-gyp/canvas/puppeteer e pelo Web para compilação nativa)
+RUN apk add --no-cache \
+    libc6-compat \
+    openssl \
+    python3 make g++ build-base \
+    cairo-dev jpeg-dev pango-dev giflib-dev pixman-dev \
+    chromium nss freetype harfbuzz ttf-freefont
+
+# A imagem final desse Dockerfile será apenas a base com o SO e libs configuradas.
+# A aplicação e o node_modules não estão aqui, permitindo que esta imagem raramente mude.

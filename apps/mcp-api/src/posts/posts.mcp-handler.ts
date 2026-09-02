@@ -3,6 +3,8 @@ import { McpTool } from '../mcp-resources/decorators/mcp-tool.decorator';
 import { PostsService } from './posts.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GraphRequestedEvent } from '../assets/assets.listener';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
 export class PostsMcpHandler {
@@ -76,7 +78,7 @@ export class PostsMcpHandler {
       ],
     },
   })
-  async createPost(userId: string, args: any) {
+  async createPost(userId: string, args: CreatePostDto) {
     return this.postsService.create(userId, args);
   }
 
@@ -93,7 +95,7 @@ export class PostsMcpHandler {
       required: ['id'],
     },
   })
-  async updatePost(userId: string, args: any) {
+  async updatePost(userId: string, args: { id: string } & UpdatePostDto) {
     const { id, ...updateData } = args;
     return this.postsService.update(id, userId, updateData);
   }

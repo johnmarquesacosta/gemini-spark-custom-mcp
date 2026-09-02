@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { McpTool } from '../mcp-resources/decorators/mcp-tool.decorator';
 import { CategoriesService } from './categories.service';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesMcpHandler {
@@ -41,7 +43,7 @@ export class CategoriesMcpHandler {
       required: ['name', 'slug'],
     },
   })
-  async createCategory(userId: string, args: any) {
+  async createCategory(userId: string, args: CreateCategoryDto) {
     return this.categoriesService.create(userId, args);
   }
 
@@ -59,7 +61,10 @@ export class CategoriesMcpHandler {
       required: ['id'],
     },
   })
-  async updateCategory(userId: string, args: any) {
+  async updateCategory(
+    userId: string,
+    args: { id: string } & UpdateCategoryDto,
+  ) {
     const { id, ...updateData } = args;
     return this.categoriesService.update(id, userId, updateData);
   }

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import { ChartConfiguration } from 'chart.js';
 import { GraphEngine } from '../posts/enums/graph-engine.enum';
 
 @Injectable()
@@ -116,7 +117,9 @@ export class GraphRendererService implements OnModuleInit, OnModuleDestroy {
       // Spec should be a valid Chart.js configuration JSON string
       const config = JSON.parse(spec);
 
-      const buffer = await this.chartJSNodeCanvas.renderToBuffer(config as any);
+      const buffer = await this.chartJSNodeCanvas.renderToBuffer(
+        config as ChartConfiguration,
+      );
 
       return {
         buffer,

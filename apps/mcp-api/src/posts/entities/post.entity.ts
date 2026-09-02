@@ -16,7 +16,6 @@ import type { Relation } from 'typeorm';
 import { PostStatus } from '../enums/post-status.enum';
 import { ArticleSchemaType } from '../enums/article-schema-type.enum';
 import type { PostBlock } from './post-block.entity';
-import { GeneratedImage } from './generated-image.entity';
 import { PostSource } from './post-source.entity';
 import { Category } from './category.entity';
 import { Tag } from './tag.entity';
@@ -31,12 +30,6 @@ export class Post {
   // --- Multi-tenant / multi-idioma ---
   @Column()
   userId: string;
-
-  @Column('uuid')
-  siteId: string;
-
-  // @ManyToOne(() => Site, { nullable: false })
-  // site: Site;
 
   @Column({ length: 5 })
   language: string; // 'pt-BR', 'en-US', 'es-ES' — ISO 639-1 + região
@@ -115,17 +108,6 @@ export class Post {
   tags: Tag[];
 
   // --- Relacionamentos ---
-  @Column({ type: 'uuid', nullable: true })
-  featuredImageId: string | null;
-
-  @OneToOne(() => GeneratedImage, {
-    nullable: true,
-    cascade: true,
-    eager: true,
-  })
-  @JoinColumn({ name: 'featuredImageId' })
-  featuredImage: GeneratedImage | null;
-
   @OneToMany('PostBlock', (block: PostBlock) => block.post, { cascade: true })
   blocks: Relation<PostBlock>[];
 
