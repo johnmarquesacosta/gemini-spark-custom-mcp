@@ -16,16 +16,19 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiResponse,
+  ApiExtraModels,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { CreatePostBlockDto } from './dto/create-post-block.dto';
 import { McpAuthGuard } from '../mcp-auth/mcp-auth.guard';
 
 @ApiTags('Posts')
 @ApiBearerAuth()
 @UseGuards(McpAuthGuard)
+@ApiExtraModels(CreatePostBlockDto)
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}

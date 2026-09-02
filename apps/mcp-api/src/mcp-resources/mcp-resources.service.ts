@@ -6,35 +6,66 @@ import { McpPrompt } from './entities/mcp-prompt.entity';
 import { McpRegistryService } from './mcp-registry.service';
 
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateToolDto {
+  @ApiProperty({
+    example: 'search_web',
+    description: 'Unique name of the tool',
+  })
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({
+    example: 'Searches the web for a given query',
+    description: 'Human-readable description of what the tool does',
+  })
   @IsString()
   @IsNotEmpty()
   description: string;
 
+  @ApiPropertyOptional({
+    example: { type: 'object', properties: { query: { type: 'string' } } },
+    description: 'JSON Schema describing the tool input parameters',
+  })
   @IsOptional()
-  inputSchema?: any;
+  inputSchema?: Record<string, unknown>;
 }
 
 export class CreatePromptDto {
+  @ApiProperty({
+    example: 'summarize',
+    description: 'Unique name of the prompt',
+  })
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({
+    example: 'Summarizes a given text into bullet points',
+    description: 'Human-readable description of the prompt',
+  })
   @IsString()
   @IsNotEmpty()
   description: string;
 
+  @ApiProperty({
+    example: 'Summarize the following text: {{text}}',
+    description: 'The prompt template content',
+  })
   @IsString()
   @IsNotEmpty()
   content: string;
 
+  @ApiPropertyOptional({
+    example: [
+      { name: 'text', description: 'The text to summarize', required: true },
+    ],
+    description: 'List of arguments the prompt accepts',
+  })
   @IsOptional()
-  arguments?: any;
+  arguments?: Record<string, unknown>[];
 }
 
 @Injectable()

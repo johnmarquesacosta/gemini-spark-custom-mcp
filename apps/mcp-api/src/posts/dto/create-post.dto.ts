@@ -48,7 +48,8 @@ export class CreatePostDto {
   excerpt: string;
 
   @ApiPropertyOptional({
-    type: () => [CreatePostBlockDto],
+    type: () => CreatePostBlockDto,
+    isArray: true,
     description: 'Content blocks',
   })
   @IsOptional()
