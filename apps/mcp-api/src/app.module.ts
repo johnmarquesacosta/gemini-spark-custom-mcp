@@ -8,6 +8,8 @@ import { McpResourcesModule } from './mcp-resources/mcp-resources.module';
 import { LoggerMiddleware } from './logger.middleware';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
+import { AssetsModule } from './assets/assets.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -30,10 +32,12 @@ import { PostsModule } from './posts/posts.module';
       }),
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot(),
     McpAuthModule,
     McpResourcesModule,
     UsersModule,
     PostsModule,
+    AssetsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

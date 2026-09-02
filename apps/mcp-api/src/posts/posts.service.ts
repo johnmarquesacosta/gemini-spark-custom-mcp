@@ -14,6 +14,9 @@ import { RenderedGraph } from './entities/rendered-graph.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostStatus } from './enums/post-status.enum';
+import { PostBlockType } from './enums/post-block-type.enum';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GraphRequestedEvent } from '../assets/assets.listener';
 
 @Injectable()
 export class PostsService {
@@ -24,6 +27,7 @@ export class PostsService {
     private categoriesRepository: Repository<Category>,
     @InjectRepository(Tag)
     private tagsRepository: Repository<Tag>,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private calculateMetrics(blocks?: { type: string; textContent?: string }[]) {
@@ -45,6 +49,43 @@ export class PostsService {
     return { wordCount, readingTimeMinutes };
   }
 
+  private processBlocks(blocksDto?: any[]): PostBlock[] | undefined {
+    if (!blocksDto) return undefined;
+    return blocksDto.map((block) => {
+      const newBlock = new PostBlock();
+      Object.assign(newBlock, block);
+      if (
+        block.type === PostBlockType.GRAPH &&
+        block.graphEngine &&
+        block.graphSpec
+      ) {
+        const graph = new RenderedGraph();
+        graph.engine = block.graphEngine;
+        graph.spec = block.graphSpec;
+        newBlock.renderedGraph = graph;
+      }
+      if (block.type === PostBlockType.IMAGE && block.imagePrompt) {
+        const img = new GeneratedImage();
+        img.prompt = block.imagePrompt;
+        newBlock.generatedImage = img;
+      }
+      return newBlock;
+    });
+  }
+
+  private triggerGraphEvents(post: Post) {
+    if (post.blocks) {
+      for (const block of post.blocks) {
+        if (block.renderedGraph && block.renderedGraph.id) {
+          this.eventEmitter.emit(
+            'graph.requested',
+            new GraphRequestedEvent(block.renderedGraph.id),
+          );
+        }
+      }
+    }
+  }
+
   async create(userId: string, createPostDto: CreatePostDto): Promise<Post> {
     const { categoryId, tagIds, ...postData } = createPostDto;
 
@@ -64,11 +105,11 @@ export class PostsService {
       postData.blocks,
     );
 
-    // Simplificação temporária: na API, apenas persistimos os blocos enviados no DTO
-    // O DTO e a entidade lidam com cascata se configurados.
-    // Em implementações reais, geramos `GeneratedImage` e `RenderedGraph` instâncias aqui se for Deep Save
+    const postBlocks = this.processBlocks(postData.blocks);
+
     const post = this.postsRepository.create({
       ...postData,
+      blocks: postBlocks,
       userId,
       category,
       tags,
@@ -76,7 +117,9 @@ export class PostsService {
       readingTimeMinutes,
     });
 
-    return this.postsRepository.save(post);
+    const savedPost = await this.postsRepository.save(post);
+    this.triggerGraphEvents(savedPost);
+    return savedPost;
   }
 
   async findAll(userId: string): Promise<Post[]> {
@@ -139,9 +182,12 @@ export class PostsService {
       );
       post.wordCount = wordCount;
       post.readingTimeMinutes = readingTimeMinutes;
+      post.blocks = this.processBlocks(postData.blocks) || [];
     }
 
-    return this.postsRepository.save(post);
+    const savedPost = await this.postsRepository.save(post);
+    this.triggerGraphEvents(savedPost);
+    return savedPost;
   }
 
   async publish(id: string, userId: string): Promise<Post> {

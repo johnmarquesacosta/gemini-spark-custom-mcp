@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { McpTool } from '../mcp-resources/decorators/mcp-tool.decorator';
 import { PostsService } from './posts.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GraphRequestedEvent } from '../assets/assets.listener';
 
 @Injectable()
 export class PostsMcpHandler {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @McpTool({
     name: 'posts_list',
@@ -118,5 +123,22 @@ export class PostsMcpHandler {
   async deletePost(userId: string, args: { id: string }) {
     await this.postsService.remove(args.id, userId);
     return { success: true };
+  }
+
+  @McpTool({
+    name: 'posts_retry_graph',
+    description: 'Retry generating a failed graph',
+    inputSchema: {
+      type: 'object',
+      properties: { graphId: { type: 'string' } },
+      required: ['graphId'],
+    },
+  })
+  async retryGraph(userId: string, args: { graphId: string }) {
+    this.eventEmitter.emit(
+      'graph.requested',
+      new GraphRequestedEvent(args.graphId),
+    );
+    return { success: true, message: 'Graph rendering requested again.' };
   }
 }
