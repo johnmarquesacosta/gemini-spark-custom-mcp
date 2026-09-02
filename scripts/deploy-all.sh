@@ -3,6 +3,21 @@ set -euo pipefail
 
 TAG="${1:-latest}"
 
+if [ -z "${PLATFORMS:-}" ]; then
+  echo "Escolha a plataforma para build:"
+  echo "1) Ambas (linux/amd64,linux/arm64) [Padrão]"
+  echo "2) Apenas linux/amd64"
+  echo "3) Apenas linux/arm64"
+  read -p "Opção [1]: " OPTION
+
+  case "${OPTION:-1}" in
+    1) export PLATFORMS="linux/amd64,linux/arm64" ;;
+    2) export PLATFORMS="linux/amd64" ;;
+    3) export PLATFORMS="linux/arm64" ;;
+    *) echo "Opção inválida"; exit 1 ;;
+  esac
+fi
+
 ROOT_DIR=$(git rev-parse --show-toplevel)
 cd "$ROOT_DIR"
 
